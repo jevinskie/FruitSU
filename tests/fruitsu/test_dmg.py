@@ -4,12 +4,14 @@ import sys
 
 import pytest
 
+import fruitsu.dmg
 
 def inc(x):
     return x + 1
 
 
 def test_answer():
+    fruitsu.dmg.dmg_func()
     print('test_answer() WOOHOO!!!!')
     assert inc(3) == 4
 
