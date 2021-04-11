@@ -1,0 +1,14 @@
+[tool.poetry]
+name = "fruitsu"
+version = "0.1.0"
+description = "FruitSU - Tools for Apple Software Updates"
+authors = ["Jevin Sweval <jevinsweval@gmail.com>"]
+
+[tool.poetry.dependencies]
+python = "^3.9"
+
+[tool.poetry.dev-dependencies]
+
+[build-system]
+requires = ["poetry-core>=1.0.0"]
+build-backend = "poetry.core.masonry.api"
