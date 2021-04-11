@@ -2,9 +2,17 @@
 
 import sys
 
+import attr
 
-def dmg_func():
+@attr.s
+class DMG:
+    path: str = attr.ib()
+
+
+def dmg_func(dmg_path):
     print('dmg_func()')
+    dmg = DMG(dmg_path)
+    print(f'dmg: {dmg}')
 
 
 def dmg_main(dmg_path):
