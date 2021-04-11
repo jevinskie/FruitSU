@@ -1,0 +1,4 @@
+poetry.lock
+*.pyc
+__pycache__/
+pytestdebug.log
