@@ -4,12 +4,22 @@ version = "0.1.0"
 description = "FruitSU - Tools for Apple Software Updates"
 authors = ["Jevin Sweval <jevinsweval@gmail.com>"]
 
+[tool.poe.tasks]
+test = "pytest"
+test-v = "pytest -vvvv"
+test-vv = "pytest -vvvv --capture=tee-sys"
+
 [tool.poetry.dependencies]
 python = "^3.9"
 construct = "^2.10.66"
+rich = "^10.1.0"
+pretty-errors = "^1.2.19"
 
 [tool.poetry.dev-dependencies]
 pytest = "^6.2.3"
+poethepoet = "^0.10.0"
+pytest-clarity = "^0.3.0-alpha.0"
+six = "^1.15.0"
 
 [build-system]
 requires = ["poetry-core>=1.0.0"]
