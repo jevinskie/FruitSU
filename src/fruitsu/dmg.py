@@ -10,7 +10,7 @@ class DMG:
 
 
 def dmg_func(dmg_path):
-    print('dmg_func()')
+    print(f'dmg_func() __package__: {__package__}')
     dmg = DMG(dmg_path)
     print(f'dmg: {dmg}')
 
