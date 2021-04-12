@@ -22,6 +22,7 @@ def test_answer():
     with open(hello_dmg_path, 'rb') as dmg_fh:
         dmg = fruitsu.dmg.DMG(dmg_fh)
         print(f'dmg: {dmg}')
+        dmg.dump()
     fruitsu.dmg.dmg_func('foo.dmg')
     print('test_answer() WOOHOO!!!!')
     assert inc(3) == 4
