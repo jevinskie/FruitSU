@@ -1,12 +1,13 @@
 #!/usr/bin/env python3
 
 import sys
+from typing import IO
 
 import attr
 
 @attr.s
 class DMG:
-    path: str = attr.ib()
+    fh: IO[bytes] = attr.ib()
 
 
 def dmg_func(dmg_path):

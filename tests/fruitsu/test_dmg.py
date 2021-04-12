@@ -8,8 +8,6 @@ import pytest
 from rich import inspect as rinspect
 from rich import print
 
-import tests
-# import testsz
 import fruitsu
 import fruitsu.dmg
 
@@ -19,14 +17,11 @@ def inc(x):
 
 
 def test_answer():
-    # rinspect(fruitsu)
-    # rinspect(fruitsu.dmg)
-    files = importlib.resources.files(fruitsu)
-    print(f'self files: {files}')
-    print(f'__package__: {__package__}')
-    files2 = importlib.resources.files(__package__)
-    print(f'self self files2: {files2}')
-    print(f'sys.path: {sys.path} argv: {sys.argv}')
+    test_dir = importlib.resources.files(__package__)
+    hello_dmg_path = test_dir / 'hello.dmg'
+    with open(hello_dmg_path, 'rb') as dmg_fh:
+        dmg = fruitsu.dmg.DMG(dmg_fh)
+        print(f'dmg: {dmg}')
     fruitsu.dmg.dmg_func('foo.dmg')
     print('test_answer() WOOHOO!!!!')
     assert inc(3) == 4
