@@ -19,6 +19,7 @@ def inc(x):
 def test_answer():
     test_dir = importlib.resources.files(__package__)
     hello_dmg_path = test_dir / 'hello.dmg'
+    # hello_dmg_path = test_dir / 'InstallESD.dmg'
     with open(hello_dmg_path, 'rb') as dmg_fh:
         dmg = fruitsu.dmg.DMG(dmg_fh)
         print(f'dmg: {dmg}')
