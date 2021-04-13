@@ -4,3 +4,4 @@ __pycache__/
 pytestdebug.log
 .tox/
 tests/fruitsu/InstallESD.dmg
+dump.img

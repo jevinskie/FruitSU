@@ -1,14 +1,18 @@
 #!/usr/bin/env python3
 
+from ctypes import c_int, c_char, c_uint8, memset
 import io
+import mmap
 import plistlib
-from typing import IO
+from typing import IO, Final
 import zlib
 
 import attr
 from construct import *
 from rich import print as rprint
 from rich import inspect as rinspect
+
+SECTOR_SIZE: Final[int] = 512
 
 UDIFChecksum = Struct(
     'chksum_type' / Int32ub,
@@ -99,12 +103,23 @@ class DMG:
         # print(f'plist_str: {plist_str}')
         plist = plistlib.loads(plist_buf)
         # print(f'plist: {plist}')
-        for blk_info in plist['resource-fork']['blkx']:
-            data = blk_info['Data']
-            if len(data) >= 4 and data[:4] == b'mish':
-                print('got mish block')
-                blkx_table = BLKXTable.parse(data)
-                print(f'blkx_table: {blkx_table}')
+        sz = hdr.sector_count * SECTOR_SIZE
+        with mmap.mmap(-1, sz) as mm:
+            mmty = c_uint8 * len(mm)
+            ptr = mmty.from_buffer(mm)
+            # mv = memoryview(mm)
+            print(f'ptr {ptr}')
+            memset(ptr, ord('U'), sz)
+            del ptr
+            print(f'mm: {mm}')
+            for blk_info in plist['resource-fork']['blkx']:
+                data = blk_info['Data']
+                if len(data) >= 4 and data[:4] == b'mish':
+                    print('got mish block')
+                    blkx_table = BLKXTable.parse(data)
+                    print(f'blkx_table: {blkx_table}')
+            with open('dump.img', 'wb') as dumpf:
+                dumpf.write(mm)
 
 
 def dmg_func(dmg_path):
