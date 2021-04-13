@@ -3,6 +3,7 @@
 import io
 import plistlib
 from typing import IO
+import zlib
 
 import attr
 from construct import *
@@ -40,8 +41,22 @@ UDIFResourceFile = Struct(
     'reserved4' / Const(0, Int32ub),
 )
 
+BLKXChunkEntryType = Enum(
+    Int32ub,
+    zero=0x00000000,
+    raw=0x00000001,
+    sparse=0x00000002,
+    comment=0x7ffffffe,
+    adc=0x80000004,
+    zlib=0x80000005,
+    bzip2=0x80000006,
+    lzfse=0x80000007,
+    lzma=0x80000008,
+    terminator=0xffffffff,
+)
+
 BLKXChunkEntry = Struct(
-    'entry_type' / Int32ub,
+    'entry_type' / BLKXChunkEntryType,
     'comment' / Int32ub,
     'sector_num' / Int64ub,
     'sector_count' / Int64ub,
@@ -57,7 +72,7 @@ BLKXTable = Struct(
     'data_off' / Int64ub,
     'buffers_needed' / Int32ub,
     'block_descriptors' / Int32ub,
-    'reserved' / Const(b'\0' * 4*6),
+    'reserved' / Const(b'\0' * 4 * 6),
     'chksum' / UDIFChecksum,
     'num_block_chunks' / Int32ub,
     'block_chunks' / Array(this.num_block_chunks, BLKXChunkEntry),
@@ -81,15 +96,15 @@ class DMG:
         self.fh.seek(hdr.plist_off, io.SEEK_SET)
         plist_buf = self.fh.read(hdr.plist_sz)
         plist_str = plist_buf.decode()
-        print(f'plist_str: {plist_str}')
+        # print(f'plist_str: {plist_str}')
         plist = plistlib.loads(plist_buf)
-        print(f'plist: {plist}')
+        # print(f'plist: {plist}')
         for blk_info in plist['resource-fork']['blkx']:
-            if len(blk_info['Data']) >= 4 and blk_info['Data'][:4] == b'mish':
+            data = blk_info['Data']
+            if len(data) >= 4 and data[:4] == b'mish':
                 print('got mish block')
-                blkx_table = BLKXTable.parse(blk_info['Data'])
+                blkx_table = BLKXTable.parse(data)
                 print(f'blkx_table: {blkx_table}')
-
 
 
 def dmg_func(dmg_path):
