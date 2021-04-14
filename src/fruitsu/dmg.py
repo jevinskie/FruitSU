@@ -36,7 +36,10 @@ UDIFResourceFile = Struct(
     'data_chksum' / UDIFChecksum,
     'plist_off' / Int64ub,
     'plist_sz' / Int64ub,
-    'reserved1' / Const(b'\0' * 120),
+    'external' / Bytes(64),
+    'codesign_off' / Int64ub,
+    'codesign_sz' / Int64ub,
+    'reserved1' / Const(b'\0' * 40),
     'chksum' / UDIFChecksum,
     'image_variant' / Int32ub,
     'sector_count' / Int64ub,
@@ -88,6 +91,15 @@ assert UDIFResourceFile.sizeof() == 512
 @attr.s
 class DMG:
     fh: IO[bytes] = attr.ib()
+    buf: bytes = attr.ib(init=False)
+    sz: Final[int] = attr.ib(init=False)
+
+    def __attrs_post_init__(self):
+        self.fh.seek(0, io.SEEK_END)
+        self.sz = self.fh.tell()
+        self.sz = 0
+        self.fh.seek(0, io.SEEK_SET)
+        self.buf = mmap.mmap(self.fh.fileno(), self.sz, mmap.MAP_PRIVATE, mmap.PROT_READ)
 
     def dump(self):
         print(f'dumping: {self}')
@@ -103,35 +115,33 @@ class DMG:
         # print(f'plist_str: {plist_str}')
         plist = plistlib.loads(plist_buf)
         # print(f'plist: {plist}')
-        sz = hdr.sector_count * SECTOR_SIZE
-        with mmap.mmap(-1, sz) as mm:
-            mmty = c_uint8 * len(mm)
-            ptr = mmty.from_buffer(mm)
-            # mv = memoryview(mm)
-            print(f'ptr {ptr}')
-            memset(ptr, ord('U'), sz)
-            del ptr
-            print(f'mm: {mm}')
-            for blk_info in plist['resource-fork']['blkx']:
-                data = blk_info['Data']
-                if len(data) >= 4 and data[:4] == b'mish':
-                    print('got mish block')
-                    blkx_table = BLKXTable.parse(data)
-                    print(f'blkx_table: {blkx_table}')
-            with open('dump.img', 'wb') as dumpf:
-                dumpf.write(mm)
-
-
-def dmg_func(dmg_path):
-    print(f'dmg_func() __package__: {__package__}')
-    dmg = DMG(dmg_path)
-    print(f'dmg: {dmg}')
-
-
-def dmg_main(dmg_path):
-    print(f'dmg_main(\'{dmg_path}\')')
-    return 0
-
-
-if __name__ == '__main__':
-    sys.exit(dmg_main(sys.argv[1]))
+        for blk_idx, blk_info in enumerate(plist['resource-fork']['blkx']):
+            blk_data = blk_info['Data']
+            assert len(blk_data) >= 4 and blk_data[:4] == b'mish'
+            blkx_table = BLKXTable.parse(blk_data)
+            print(f'blkx_table: {blkx_table}')
+            part_sz = blkx_table.sector_count * SECTOR_SIZE
+            with mmap.mmap(-1, part_sz) as mm:
+                mmty = c_uint8 * part_sz
+                ptr = mmty.from_buffer(mm)
+                memset(ptr, ord('U'), part_sz)
+                del ptr
+                for chunk in blkx_table.block_chunks:
+                    print(f'chunk: {chunk}')
+                    sn = chunk.sector_num
+                    sc = chunk.sector_count
+                    sz = sc * SECTOR_SIZE
+                    off = sn * SECTOR_SIZE
+                    coff = chunk.compressed_off
+                    csz = chunk.compressed_sz
+                    cty = chunk.entry_type
+                    roff = blkx_table.sector_num * SECTOR_SIZE + off
+                    mm[off:off + sz] = b'X' * sz
+                    if cty == BLKXChunkEntryType.sparse:
+                        mm[off:off + sz] = b'#' * sz
+                    elif cty == BLKXChunkEntryType.zlib:
+                        mm[off:off + sz] = zlib.decompress(self.buf[coff:coff+csz])
+                    elif cty == BLKXChunkEntryType.zero:
+                        mm[off:off + sz] = b'\x00' * sz
+                with open(f'dump_{blk_idx}.img', 'wb') as dumpf:
+                    dumpf.write(mm)
