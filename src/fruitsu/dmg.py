@@ -159,6 +159,10 @@ class DMG:
                             zeros = b'\x00' * sz
                             mm[off:off + sz] = zeros
                             dmg_wbuf[roff:roff + sz] = zeros
+                        elif cty == BLKXChunkEntryType.raw:
+                            cpybuf = self.buf[coff:coff+csz]
+                            mm[off:off + sz] = cpybuf
+                            dmg_wbuf[roff:roff+sz] = cpybuf
                         elif cty == BLKXChunkEntryType.terminator:
                             # no need to do anything
                             pass
@@ -167,4 +171,5 @@ class DMG:
                     with open(f'dump-{blk_idx}.img', 'wb') as dumpf:
                         dumpf.write(mm)
             with open('dump-whole.img', 'wb') as dumpf:
-                dumpf.write(dmg_wbuf)
+                # dumpf.write(dmg_wbuf)
+                dumpf.write(b'im just a dummy\n')
