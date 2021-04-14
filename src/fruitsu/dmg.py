@@ -52,7 +52,7 @@ BLKXChunkEntryType = Enum(
     Int32ub,
     zero=0x00000000,
     raw=0x00000001,
-    sparse=0x00000002,
+    ignore=0x00000002,
     comment=0x7ffffffe,
     adc=0x80000004,
     zlib=0x80000005,
@@ -115,33 +115,56 @@ class DMG:
         # print(f'plist_str: {plist_str}')
         plist = plistlib.loads(plist_buf)
         # print(f'plist: {plist}')
-        for blk_idx, blk_info in enumerate(plist['resource-fork']['blkx']):
-            blk_data = blk_info['Data']
-            assert len(blk_data) >= 4 and blk_data[:4] == b'mish'
-            blkx_table = BLKXTable.parse(blk_data)
-            print(f'blkx_table: {blkx_table}')
-            part_sz = blkx_table.sector_count * SECTOR_SIZE
-            with mmap.mmap(-1, part_sz) as mm:
-                mmty = c_uint8 * part_sz
-                ptr = mmty.from_buffer(mm)
-                memset(ptr, ord('U'), part_sz)
-                del ptr
-                for chunk in blkx_table.block_chunks:
-                    print(f'chunk: {chunk}')
-                    sn = chunk.sector_num
-                    sc = chunk.sector_count
-                    sz = sc * SECTOR_SIZE
-                    off = sn * SECTOR_SIZE
-                    coff = chunk.compressed_off
-                    csz = chunk.compressed_sz
-                    cty = chunk.entry_type
-                    roff = blkx_table.sector_num * SECTOR_SIZE + off
-                    mm[off:off + sz] = b'X' * sz
-                    if cty == BLKXChunkEntryType.sparse:
-                        mm[off:off + sz] = b'#' * sz
-                    elif cty == BLKXChunkEntryType.zlib:
-                        mm[off:off + sz] = zlib.decompress(self.buf[coff:coff+csz])
-                    elif cty == BLKXChunkEntryType.zero:
-                        mm[off:off + sz] = b'\x00' * sz
-                with open(f'dump_{blk_idx}.img', 'wb') as dumpf:
-                    dumpf.write(mm)
+        dmg_sz = hdr.sector_count * SECTOR_SIZE
+        with mmap.mmap(-1, dmg_sz) as dmg_wbuf:
+            dmg_mmty = c_uint8 * dmg_sz
+            dmg_ptr = dmg_mmty.from_buffer(dmg_wbuf)
+            memset(dmg_ptr, ord('Z'), dmg_sz)
+            del dmg_ptr
+            for blk_idx, blk_info in enumerate(plist['resource-fork']['blkx']):
+                blk_data = blk_info['Data']
+                assert len(blk_data) >= 4 and blk_data[:4] == b'mish'
+                blkx_table = BLKXTable.parse(blk_data)
+                print(f'blkx_table: {blkx_table}')
+                part_sz = blkx_table.sector_count * SECTOR_SIZE
+                with mmap.mmap(-1, part_sz) as mm:
+                    mmty = c_uint8 * part_sz
+                    ptr = mmty.from_buffer(mm)
+                    memset(ptr, ord('U'), part_sz)
+                    del ptr
+                    for chunk in blkx_table.block_chunks:
+                        print(f'chunk: {chunk}')
+                        sn = chunk.sector_num
+                        sc = chunk.sector_count
+                        sz = sc * SECTOR_SIZE
+                        off = sn * SECTOR_SIZE
+                        coff = chunk.compressed_off
+                        csz = chunk.compressed_sz
+                        cty = chunk.entry_type
+                        roff = blkx_table.sector_num * SECTOR_SIZE + off
+                        scratch = b'X' * sz
+                        mm[off:off + sz] = scratch
+                        dmg_wbuf[off:off + sz] = scratch
+                        if cty == BLKXChunkEntryType.ignore:
+                            # mm[off:off + sz] = self.buf[roff:roff+sz]
+                            # dmg_wbuf[roff:roff+sz] = mm[off:off + sz]
+                            hashes = b'\x00' * sz
+                            mm[off:off + sz] = hashes
+                            dmg_wbuf[roff:roff + sz] = hashes
+                        elif cty == BLKXChunkEntryType.zlib:
+                            decomp = zlib.decompress(self.buf[coff:coff+csz])
+                            mm[off:off + sz] = decomp
+                            dmg_wbuf[roff:roff + sz] = decomp
+                        elif cty == BLKXChunkEntryType.zero:
+                            zeros = b'\x00' * sz
+                            mm[off:off + sz] = zeros
+                            dmg_wbuf[roff:roff + sz] = zeros
+                        elif cty == BLKXChunkEntryType.terminator:
+                            # no need to do anything
+                            pass
+                        else:
+                            print(f'unhandled block run type: {cty}')
+                    with open(f'dump-{blk_idx}.img', 'wb') as dumpf:
+                        dumpf.write(mm)
+            with open('dump-whole.img', 'wb') as dumpf:
+                dumpf.write(dmg_wbuf)
