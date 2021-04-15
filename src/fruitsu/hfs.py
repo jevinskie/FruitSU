@@ -1,9 +1,10 @@
 #!/usr/bin/env python3
 
+import datetime
 import io
+import math
 import mmap
-from typing import IO, Final, Union
-import zlib
+from typing import IO, Final
 
 import attr
 from construct import *
@@ -59,6 +60,36 @@ from rich import inspect as rinspect
 #   HFSPlusExtentRecord extents;
 # };
 
+# struct HFSUniStr255 {
+#   UInt16 length;
+#   UniChar unicode[255];
+# };
+
+HFSUniStr255 = PaddedString(255, 'utf16')
+
+# HFS epoch: January 1, 1904, GMT
+# 24,107 days before 1970-01-01T00:00:00
+# 2,082,844,800 seconds before 1970-01-01T00:00:00
+
+HFSEpochUnixEpochSecondsDelta: Final[int] = 2_082_844_800
+
+HFSEpoch = datetime.datetime(1904, 1, 1, 0, 0, 0)
+UnixEpoch = datetime.datetime(1970, 1, 1, 0, 0, 0)
+HFSEpochUnixEpochDelta = UnixEpoch - HFSEpoch
+print(f'HFSEpochUnixEpochDelta: {HFSEpochUnixEpochDelta}')
+
+
+class HFSDateAdapter(Adapter):
+    def _decode(self, obj, context, path) -> datetime.datetime:
+        return HFSEpoch + datetime.timedelta(seconds=obj)
+
+    def _encode(self, obj: datetime.datetime, context, path):
+        td = obj - HFSEpoch
+        return int(math.ceil(td.total_seconds()))
+
+
+HFSDate = HFSDateAdapter(Int32ub)
+
 HFSCatalogNodeID = Int32ub
 
 HFSPlusExtentDescriptor = Struct(
@@ -81,10 +112,10 @@ HFSPlusVolumeHeader = Struct(
     'attributes' / Int32ub,
     'lastMountedVersion' / Int32ub,
     'jounalInfoBlock' / Int32ub,
-    'createDate' / Int32ub,
-    'modifyDate' / Int32ub,
-    'backupDate' / Int32ub,
-    'checkedDate' / Int32ub,
+    'createDate' / HFSDate,
+    'modifyDate' / HFSDate,
+    'backupDate' / HFSDate,
+    'checkedDate' / HFSDate,
     'fileCount' / Int32ub,
     'folderCount' / Int32ub,
     'blockSize' / Int32ub,
