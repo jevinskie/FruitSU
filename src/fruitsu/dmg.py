@@ -17,7 +17,7 @@ SECTOR_SIZE: Final[int] = 512
 UDIFChecksum = Struct(
     'chksum_type' / Int32ub,
     'chksum_sz' / Int32ub,
-    'chksum' / Array(32, Int32ub),
+    'chksum' / Int32ub[32],
 )
 
 UDIFResourceFile = Struct(
@@ -82,7 +82,7 @@ BLKXTable = Struct(
     'reserved' / Const(b'\0' * 4 * 6),
     'chksum' / UDIFChecksum,
     'num_block_chunks' / Int32ub,
-    'block_chunks' / Array(this.num_block_chunks, BLKXChunkEntry),
+    'block_chunks' / BLKXChunkEntry[this.num_block_chunks],
 )
 
 assert UDIFResourceFile.sizeof() == 512
