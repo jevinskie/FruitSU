@@ -141,19 +141,22 @@ class HFS:
     fh: IO[bytes] = attr.ib()
     buf: bytes = attr.ib(init=False)
     sz: Final[int] = attr.ib(init=False)
+    hdr_buf: Final[bytes] = attr.ib(init=False)
+    hdr: HFSPlusVolumeHeader = attr.ib(init=False)
 
     def __attrs_post_init__(self):
+        old_tell = self.fh.tell()
         self.fh.seek(0, io.SEEK_END)
         self.sz = self.fh.tell()
-        self.sz = 0
-        self.fh.seek(0, io.SEEK_SET)
+        self.fh.seek(1024, io.SEEK_SET)
+        self.hdr_buf = self.fh.read(HFSPlusVolumeHeader.sizeof())
+        self.fh.seek(old_tell, io.SEEK_SET)
         self.buf = mmap.mmap(self.fh.fileno(), self.sz, mmap.MAP_PRIVATE, mmap.PROT_READ)
+        self.hdr = HFSPlusVolumeHeader.parse(self.hdr_buf)
 
     def dump(self):
         print(f'dumping: {self}')
-        self.fh.seek(1024, io.SEEK_SET)
-        buf = self.fh.read(HFSPlusVolumeHeader.sizeof())
+
         print(f'HFSPlusVolumeHeader sz: {HFSPlusVolumeHeader.sizeof()}')
-        print(f'buf: {buf.hex()}')
-        hdr = HFSPlusVolumeHeader.parse(buf)
-        print(f'hdr: {hdr}')
+        print(f'buf: {self.hdr_buf.hex()}')
+        print(f'hdr: {self.hdr}')

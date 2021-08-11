@@ -21,6 +21,7 @@ construct = "^2.10.66"
 rich = "^10.1.0"
 pretty-errors = "^1.2.19"
 attrs = "^20.3.0"
+fs = "^2.4.13"
 
 [tool.poetry.dev-dependencies]
 pytest = "^6.2.3"
