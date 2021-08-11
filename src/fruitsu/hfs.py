@@ -141,8 +141,8 @@ class HFS:
     fh: IO[bytes] = attr.ib()
     buf: bytes = attr.ib(init=False)
     sz: Final[int] = attr.ib(init=False)
-    hdr_buf: Final[bytes] = attr.ib(init=False)
-    hdr: HFSPlusVolumeHeader = attr.ib(init=False)
+    hdr_buf: Final[bytes] = attr.ib(init=False, repr=False)
+    hdr: HFSPlusVolumeHeader = attr.ib(init=False, repr=False)
 
     def __attrs_post_init__(self):
         old_tell = self.fh.tell()
