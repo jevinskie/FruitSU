@@ -135,6 +135,20 @@ HFSPlusVolumeHeader = Struct(
     'startupFile' / HFSPlusForkData,
 )
 
+HFSPlusCatalogKey = Struct(
+    'keyLength' / Int16ub,
+    'parentID' / HFSCatalogNodeID,
+    'nodeName' / HFSUniStr255,
+)
+
+kMaxKeyLength: Final = 520
+
+BTreeKey = Union('rawData',
+    'length8' / Int8ub,
+    'length16' / Int16ub,
+    'rawData' / Byte[kMaxKeyLength+2],
+)
+
 
 @attr.s
 class HFS:
@@ -159,6 +173,14 @@ class HFS:
         print(f'HFSPlusVolumeHeader sz: {HFSPlusVolumeHeader.sizeof()}')
         print(f'buf: {self.hdr_buf.hex()}')
         print(f'hdr: {self.hdr}')
-        assert self.hdr.catalogFile.extents[0].blockCount > 0
+        blk_off = self.hdr.catalogFile.extents[0].startBlock * self.hdr.blockSize
+        blk_cnt = self.hdr.catalogFile.extents[0].blockCount
+        blk_byte_sz = blk_cnt * self.hdr.blockSize
+        assert blk_cnt > 0
         assert self.hdr.catalogFile.extents[1].blockCount == 0
-
+        cat_buf = self.buf[blk_off:blk_off+self.hdr.catalogFile.logicalSize]
+        print(f'len(cat_buf) = {len(cat_buf)}')
+        with open('cat_buf.bin', 'wb') as f:
+            f.write(cat_buf)
+        root_cat_key = BTreeKey.parse(cat_buf)
+        print(f'root_cat_key: {root_cat_key}')
