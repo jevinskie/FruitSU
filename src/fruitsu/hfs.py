@@ -132,7 +132,7 @@ HFSPlusVolumeHeader = Struct(
     'extentsFile' / HFSPlusForkData,
     'catalogFile' / HFSPlusForkData,
     'attributesFile' / HFSPlusForkData,
-    'statupFile' / HFSPlusForkData,
+    'startupFile' / HFSPlusForkData,
 )
 
 
