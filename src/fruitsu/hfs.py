@@ -156,7 +156,9 @@ class HFS:
 
     def dump(self):
         print(f'dumping: {self}')
-
         print(f'HFSPlusVolumeHeader sz: {HFSPlusVolumeHeader.sizeof()}')
         print(f'buf: {self.hdr_buf.hex()}')
         print(f'hdr: {self.hdr}')
+        assert self.hdr.catalogFile.extents[0].blockCount > 0
+        assert self.hdr.catalogFile.extents[1].blockCount == 0
+
