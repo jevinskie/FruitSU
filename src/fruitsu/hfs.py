@@ -143,6 +143,59 @@ HFSPlusCatalogKey = Struct(
 
 kMaxKeyLength: Final = 520
 
+BTNodeID = Int32ub
+
+BTNodeKind = Enum(Int8sb,
+    kBTLeafNode = -1,
+    kBTIndexNode = 0,
+    kBTHeaderNode = 1,
+    kBTMapNode = 2,
+)
+
+BTNodeDescriptor = Struct(
+    'fLink' / BTNodeID,
+    'bLink' / BTNodeID,
+    'kind' / BTNodeKind,
+    'height' / Int8ub,
+    'numRecords' / Int16ub,
+    'reserved' / Int16ub,
+)
+
+# struct BTHeaderRec {
+# 	u_int16_t	treeDepth;		/* maximum height (usually leaf nodes) */
+# 	u_int32_t 	rootNode;		/* node number of root node */
+# 	u_int32_t 	leafRecords;		/* number of leaf records in all leaf nodes */
+# 	u_int32_t 	firstLeafNode;		/* node number of first leaf node */
+# 	u_int32_t 	lastLeafNode;		/* node number of last leaf node */
+# 	u_int16_t 	nodeSize;		/* size of a node, in bytes */
+# 	u_int16_t 	maxKeyLength;		/* reserved */
+# 	u_int32_t 	totalNodes;		/* total number of nodes in tree */
+# 	u_int32_t 	freeNodes;		/* number of unused (free) nodes in tree */
+# 	u_int16_t 	reserved1;		/* unused */
+# 	u_int32_t 	clumpSize;		/* reserved */
+# 	u_int8_t 	btreeType;		/* reserved */
+# 	u_int8_t 	keyCompareType;		/* Key string Comparison Type */
+# 	u_int32_t 	attributes;		/* persistent attributes about the tree */
+# 	u_int32_t 	reserved3[16];		/* reserved */
+
+BTHeaderRec = Struct(
+    'treeDepth' / Int16ub,
+    'rootNode' / Int32ub,
+    'leafRecords' / Int32ub,
+    'firstLeafNode' / Int32ub,
+    'lastLeafNone' / Int32ub,
+    'nodeSize' / Int16ub,
+    'maxKeyLength' / Int16ub,
+    'totalNodes' / Int32ub,
+    'freeNodes' / Int32ub,
+    'reserved1' / Int16ub,
+    'clumpSize' / Int32ub,
+    'btreeType' / Int8ub,
+    'keyCompareType' / Int8ub,
+    'attributes' / Int32ub,
+    'reserved3' / Int32ub[16],
+)
+
 BTreeKey = Union('rawData',
     'length8' / Int8ub,
     'length16' / Int16ub,
@@ -182,5 +235,12 @@ class HFS:
         print(f'len(cat_buf) = {len(cat_buf)}')
         with open('cat_buf.bin', 'wb') as f:
             f.write(cat_buf)
-        root_cat_key = BTreeKey.parse(cat_buf)
-        print(f'root_cat_key: {root_cat_key}')
+
+        root_node = BTNodeDescriptor.parse(cat_buf)
+        print(f'root_node: {root_node}')
+
+        first_bthdrrec = BTHeaderRec.parse(cat_buf[14:])
+        print(f'first_bthdrrec: {first_bthdrrec}')
+
+        # root_cat_key = BTreeKey.parse(cat_buf)
+        # print(f'root_cat_key: {root_cat_key}')
