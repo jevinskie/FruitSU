@@ -17,22 +17,22 @@ testpaths = [
 
 [tool.poetry.dependencies]
 python = "^3.9"
-construct = "^2.10.66"
-rich = "^10.1.0"
-pretty-errors = "^1.2.19"
+construct = "^2.10.67"
+rich = "^10.16.2"
+pretty-errors = "^1.2.25"
 attrs = "^20.3.0"
-fs = "^2.4.13"
+fs = "^2.4.15"
 
 [tool.poetry.dev-dependencies]
-pytest = "^6.2.3"
+pytest = "^6.2.5"
 poethepoet = "^0.10.0"
-pytest-clarity = "^0.3.0-alpha.0"
-six = "^1.15.0"
+pytest-clarity = "^0.3.0a0"
+six = "^1.16.0"
 pytest-pycharm = "^0.7.0"
-pytest-randomly = "^3.7.0"
-pytest-cov = "^2.11.1"
+pytest-randomly = "^3.11.0"
+pytest-cov = "^2.12.1"
 mypy = "^0.812"
 
 [build-system]
-requires = ["poetry-core>=1.0.0"]
+requires = ["poetry-core @ git+https://github.com/python-poetry/poetry-core.git@master"]
 build-backend = "poetry.core.masonry.api"
