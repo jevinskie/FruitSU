@@ -8,8 +8,9 @@ import zlib
 
 from attrs import define, field
 from construct import *
+import untangle
 
-from .io import FancyRawIOBase
+from .io import FancyRawIOBase, OffsetRawIOBase
 
 class ChecksumAlgorithmEnum(enum.IntEnum):
     none = 0
@@ -27,6 +28,8 @@ XARHeader = Struct(
     'toc_length_compressed' / Int64ub,
     'toc_length_uncompressed' / Int64ub,
     'cksum_alg' / ChecksumAlgorithm,
+    '_padding_begin' / Tell,
+    'padding' / Padding(this.size - this._padding_begin),
 )
 
 
@@ -34,11 +37,16 @@ XARHeader = Struct(
 class XARFile:
     fh: Final[FancyRawIOBase] = field(converter=FancyRawIOBase)
     hdr: XARHeader = field(init=False)
+    toc: untangle.Element = field(init=False)
 
     def __attrs_post_init__(self):
         with self.fh.seek_ctx(0):
             hdr_buf = self.fh.read()
         self.hdr = XARHeader.parse(hdr_buf)
+        print(f"hdr: {self.hdr}")
+        print(f"self.fh: {self.fh} self.fh.seek_ctx: {self.fh.seek_ctx}")
+        xml_comp_fh = OffsetRawIOBase(self.fh, self.hdr.size, self.hdr.toc_length_compressed)
+        print(f"xml_comp_fh: {xml_comp_fh[:4].hex()}")
 
     def dump(self):
         print(self)

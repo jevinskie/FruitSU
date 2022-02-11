@@ -1,6 +1,7 @@
 from contextlib import contextmanager
 import io
 from typing import Final, Optional
+from typing_extensions import Self
 
 from attrs import define, field
 import requests
@@ -11,6 +12,10 @@ class SubscriptedIOBase:
 
     def __getitem__(self, item: slice) -> bytes:
         byte_off, num_bytes, step = item.start, item.stop, item.step
+        if byte_off is None:
+            byte_off = 0
+        if num_bytes is None:
+            num_bytes = 1
         if step == Ellipsis:
             byte_off, num_bytes = byte_off * self.blksz, num_bytes * self.blksz
         old_tell = self.tell()
@@ -32,7 +37,7 @@ class FancyRawIOBase(ObjectProxy, SubscriptedIOBase, SeekContextIOBase):
     pass
 
 @define
-class OffsetRawIOBase(FancyRawIOBase):
+class OffsetRawIOBase(SubscriptedIOBase, SeekContextIOBase):
     fh: Final[FancyRawIOBase] = field(converter=FancyRawIOBase)
     off: Final[int] = 0
     sz: Final[int] = -1
@@ -72,6 +77,16 @@ class OffsetRawIOBase(FancyRawIOBase):
         if self._idx < 0 or self._idx > self.sz:
             raise ValueError("out of bounds seek")
         return self._idx
+
+    def subfile(self, offset: int, size: int = -1, blksz: Optional[int] = None) -> Self:
+        suboff = self.off + offset
+        if not (0 <= suboff <= self.sz):
+            raise ValueError("subfile suboff out of range")
+        if size < 0:
+            size = self.sz - offset
+        if blksz is None:
+            blksz = self.blksz
+        return type(self)(self.fh, suboff, size, blksz)
 
 
 @define
