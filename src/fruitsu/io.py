@@ -1,12 +1,62 @@
-import io
-from typing import Final
+from contextlib import contextmanager
+import _pyio as io
+# import io
+from typing import Final, Optional
 
 from attrs import define, field
 import requests
+from rich import inspect as rinspect
+
+class SeekableRawIOBase(io.RawIOBase):
+    def seek(self, offset: int, whence: int = io.SEEK_SET) -> int:
+        pass
+
+    def seekable(self):
+        return True
+
+class SubscriptedRawIOBase(SeekableRawIOBase):
+    blksz: Optional[int]
+
+    def __getitem__(self, item: slice) -> bytes:
+        byte_off, num_bytes, step = item.start, item.stop, item.step
+        if step == Ellipsis:
+            byte_off, num_bytes = byte_off * self.blksz, num_bytes * self.blksz
+        old_tell = self.tell()
+        self.seek(byte_off, io.SEEK_SET)
+        buf = self.read(num_bytes)
+        self.seek(old_tell, io.SEEK_SET)
+        return buf
+
+class SeekContextRawIOBase(SeekableRawIOBase):
+    @contextmanager
+    def seek_ctx(self, offset: int, whence: int = io.SEEK_SET) -> int:
+        print(f"seek_ctx type self: {type(self)}")
+        old_tell = self.tell()
+        try:
+            yield self.seek(offset, whence)
+        finally:
+            self.seek(old_tell)
+
+class FancyRawIOBase(SubscriptedRawIOBase, SeekContextRawIOBase):
+    def __init__(self, fh):
+        # if isinstance(fh, io.RawIOBase):
+        #     pass
+        # elif isinstance(fh, (io.BufferedIOBase, io.BufferedReader)):
+        #     self.__init__(fh.raw)
+        # else:
+        #     nfh = io.FileIO(fh)
+        #     self.__init__(nfh)
+
+        if isinstance(fh, str):
+            self.__init__(io.FileIO(fh))
+        elif hasattr(fh, "raw"):
+            self.__init__(fh.raw)
+        else:
+            pass
 
 @define(slots=False)
-class OffsetRawIOBase(io.RawIOBase):
-    fh: io.RawIOBase
+class OffsetRawIOBase(FancyRawIOBase):
+    fh: Final[FancyRawIOBase] = field(converter=FancyRawIOBase)
     off: Final[int] = 0
     sz: Final[int] = -1
     blksz: Final[int] = 1
@@ -32,16 +82,6 @@ class OffsetRawIOBase(io.RawIOBase):
         self._idx += len(buf)
         return buf
 
-    def __getitem__(self, item: slice) -> bytes:
-        byte_off, num_bytes, step = item.start, item.stop, item.step
-        if step == Ellipsis:
-            byte_off, num_bytes = byte_off * self.blksz, num_bytes * self.blksz
-        old_tell = self.tell()
-        self.seek(byte_off, io.SEEK_SET)
-        buf = self.read(num_bytes)
-        self.seek(old_tell, io.SEEK_SET)
-        return buf
-
     def tell(self) -> int:
         return self._idx - self.off
 
@@ -51,14 +91,14 @@ class OffsetRawIOBase(io.RawIOBase):
             parent_off += self.off
         elif whence == io.SEEK_END:
             parent_off += self._parent_end - self._end
-        self._idx =  self.fh.seek(parent_off, whence) - self.off
+        self._idx = self.fh.seek(parent_off, whence) - self.off
         if self._idx < 0 or self._idx > self.sz:
             raise ValueError("out of bounds seek")
         return self._idx
 
 
 @define(slots=False)
-class HTTPFile(io.RawIOBase):
+class HTTPFile(FancyRawIOBase):
     url: Final[str]
     _ses: Final[requests.Session] = field(init=False, default=requests.Session())
     _idx: int = field(init=False, default=0)

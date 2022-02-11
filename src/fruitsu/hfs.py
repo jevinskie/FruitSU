@@ -1,10 +1,8 @@
 #!/usr/bin/env python3
 
 import datetime
-import io
 import math
-import mmap
-from typing import IO, Final
+from typing import Final
 
 import attr
 from attrs import define
