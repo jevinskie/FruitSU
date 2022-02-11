@@ -8,6 +8,7 @@ import requests
 from wrapt import ObjectProxy
 
 class SubscriptedIOBase:
+    sz: int
     blksz: Optional[int]
 
     def __getitem__(self, item: slice) -> bytes:
@@ -15,7 +16,7 @@ class SubscriptedIOBase:
         if byte_off is None:
             byte_off = 0
         if num_bytes is None:
-            num_bytes = 1
+            num_bytes = self.sz
         if step == Ellipsis:
             byte_off, num_bytes = byte_off * self.blksz, num_bytes * self.blksz
         old_tell = self.tell()
@@ -65,7 +66,7 @@ class OffsetRawIOBase(SubscriptedIOBase, SeekContextIOBase):
         return buf
 
     def tell(self) -> int:
-        return self._idx - self.off
+        return self._idx
 
     def seek(self, offset: int, whence: int = io.SEEK_SET) -> int:
         parent_off = offset

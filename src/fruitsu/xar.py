@@ -10,6 +10,8 @@ from attrs import define, field
 from construct import *
 import untangle
 
+from rich import print as rprint
+
 from .io import FancyRawIOBase, OffsetRawIOBase
 
 class ChecksumAlgorithmEnum(enum.IntEnum):
@@ -32,6 +34,10 @@ XARHeader = Struct(
     'padding' / Padding(this.size - this._padding_begin),
 )
 
+@define
+class XARTOC:
+    pass
+
 
 @define
 class XARFile:
@@ -47,6 +53,14 @@ class XARFile:
         print(f"self.fh: {self.fh} self.fh.seek_ctx: {self.fh.seek_ctx}")
         xml_comp_fh = OffsetRawIOBase(self.fh, self.hdr.size, self.hdr.toc_length_compressed)
         print(f"xml_comp_fh: {xml_comp_fh[:4].hex()}")
+        xml_comp_buf = xml_comp_fh[:]
+        print(f"len(xml_comp_buf): {len(xml_comp_buf)}")
+        xml = zlib.decompress(xml_comp_fh[:]).decode('utf-8')
+        with open('toc.xml', 'w') as toc_fh:
+            toc_fh.write(xml)
+        print(f"xml: {xml}")
+        self.toc = untangle.parse(xml)
+        rprint(self.toc)
 
     def dump(self):
         print(self)
