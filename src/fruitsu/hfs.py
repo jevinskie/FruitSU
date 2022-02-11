@@ -7,9 +7,22 @@ import mmap
 from typing import IO, Final
 
 import attr
+from attrs import define
 from construct import *
 from rich import print as rprint
 from rich import inspect as rinspect
+
+from .io import OffsetRawIOBase
+
+@define
+class Region:
+    byte_off: int
+    byte_sz: int
+
+    @classmethod
+    def from_blks(cls, blkoff, numblk, blksz):
+        return cls(blkoff * blksz, numblk * blksz)
+
 
 # struct HFSPlusVolumeHeader {
 #   UInt16 signature;
@@ -204,33 +217,25 @@ BTreeKey = Union('rawData',
 
 @attr.s
 class HFS:
-    fh: IO[bytes] = attr.ib()
-    buf: bytes = attr.ib(init=False)
-    sz: Final[int] = attr.ib(init=False)
-    hdr_buf: Final[bytes] = attr.ib(init=False, repr=False)
+    fh: OffsetRawIOBase = attr.ib()
     hdr: HFSPlusVolumeHeader = attr.ib(init=False, repr=False)
+    cat_file: Final[OffsetRawIOBase] = attr.ib(init=False)
 
     def __attrs_post_init__(self):
-        old_tell = self.fh.tell()
-        self.fh.seek(0, io.SEEK_END)
-        self.sz = self.fh.tell()
         self.fh.seek(1024, io.SEEK_SET)
-        self.hdr_buf = self.fh.read(HFSPlusVolumeHeader.sizeof())
-        self.fh.seek(old_tell, io.SEEK_SET)
-        self.buf = mmap.mmap(self.fh.fileno(), self.sz, mmap.MAP_PRIVATE, mmap.PROT_READ)
-        self.hdr = HFSPlusVolumeHeader.parse(self.hdr_buf)
+        hdr_buf = self.fh.read(HFSPlusVolumeHeader.sizeof())
+        self.hdr = HFSPlusVolumeHeader.parse(hdr_buf)
+        cat_ext = self.hdr.catalogFile.extents[0]
+        self.cat_file = Region.from_blks(cat_ext.startBlock, cat_ext.blockCount, self.hdr.blockSize)
 
     def dump(self):
         print(f'dumping: {self}')
         print(f'HFSPlusVolumeHeader sz: {HFSPlusVolumeHeader.sizeof()}')
-        print(f'buf: {self.hdr_buf.hex()}')
         print(f'hdr: {self.hdr}')
-        blk_off = self.hdr.catalogFile.extents[0].startBlock * self.hdr.blockSize
-        blk_cnt = self.hdr.catalogFile.extents[0].blockCount
-        blk_byte_sz = blk_cnt * self.hdr.blockSize
-        assert blk_cnt > 0
+        assert self.hdr.catalogFile.extents[0].blockCount > 0
         assert self.hdr.catalogFile.extents[1].blockCount == 0
-        cat_buf = self.buf[blk_off:blk_off+self.hdr.catalogFile.logicalSize]
+        blk_off = self.hdr.catalogFile.extents[0].startBlock * self.hdr.blockSize
+        cat_buf = self.fh[blk_off:self.hdr.catalogFile.logicalSize]
         print(f'len(cat_buf) = {len(cat_buf)}')
         with open('cat_buf.bin', 'wb') as f:
             f.write(cat_buf)
