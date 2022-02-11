@@ -1,6 +1,5 @@
 from contextlib import contextmanager
-import _pyio as io
-# import io
+import io
 from typing import Final, Optional
 
 from attrs import define, field
