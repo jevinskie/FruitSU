@@ -38,7 +38,7 @@ class XARFile:
     def __attrs_post_init__(self):
         with self.fh.seek_ctx(0):
             hdr_buf = self.fh.read()
-        self.hdr.parse(hdr_buf)
+        self.hdr = XARHeader.parse(hdr_buf)
 
     def dump(self):
         print(self)

@@ -5,16 +5,9 @@ from typing import Final, Optional
 
 from attrs import define, field
 import requests
-from rich import inspect as rinspect
+from wrapt import ObjectProxy
 
-class SeekableRawIOBase(io.RawIOBase):
-    def seek(self, offset: int, whence: int = io.SEEK_SET) -> int:
-        pass
-
-    def seekable(self):
-        return True
-
-class SubscriptedRawIOBase(SeekableRawIOBase):
+class SubscriptedIOBase:
     blksz: Optional[int]
 
     def __getitem__(self, item: slice) -> bytes:
@@ -27,7 +20,7 @@ class SubscriptedRawIOBase(SeekableRawIOBase):
         self.seek(old_tell, io.SEEK_SET)
         return buf
 
-class SeekContextRawIOBase(SeekableRawIOBase):
+class SeekContextIOBase:
     @contextmanager
     def seek_ctx(self, offset: int, whence: int = io.SEEK_SET) -> int:
         print(f"seek_ctx type self: {type(self)}")
@@ -37,22 +30,8 @@ class SeekContextRawIOBase(SeekableRawIOBase):
         finally:
             self.seek(old_tell)
 
-class FancyRawIOBase(SubscriptedRawIOBase, SeekContextRawIOBase):
-    def __init__(self, fh):
-        # if isinstance(fh, io.RawIOBase):
-        #     pass
-        # elif isinstance(fh, (io.BufferedIOBase, io.BufferedReader)):
-        #     self.__init__(fh.raw)
-        # else:
-        #     nfh = io.FileIO(fh)
-        #     self.__init__(nfh)
-
-        if isinstance(fh, str):
-            self.__init__(io.FileIO(fh))
-        elif hasattr(fh, "raw"):
-            self.__init__(fh.raw)
-        else:
-            pass
+class FancyRawIOBase(ObjectProxy, SubscriptedIOBase, SeekContextIOBase):
+    pass
 
 @define(slots=False)
 class OffsetRawIOBase(FancyRawIOBase):
