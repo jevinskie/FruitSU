@@ -11,10 +11,6 @@ from rich import print
 import fruitsu.hfs
 
 
-def inc(x):
-    return x + 1
-
-
 def test_dmg():
     test_dir = importlib.resources.files(__package__)
     hello_hfs_part_path = test_dir / 'hello-hfs-part.img'
