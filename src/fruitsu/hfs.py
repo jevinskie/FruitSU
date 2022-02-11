@@ -76,7 +76,6 @@ HFSEpochUnixEpochSecondsDelta: Final[int] = 2_082_844_800
 HFSEpoch = datetime.datetime(1904, 1, 1, 0, 0, 0)
 UnixEpoch = datetime.datetime(1970, 1, 1, 0, 0, 0)
 HFSEpochUnixEpochDelta = UnixEpoch - HFSEpoch
-print(f'HFSEpochUnixEpochDelta: {HFSEpochUnixEpochDelta}')
 
 
 class HFSDateAdapter(Adapter):

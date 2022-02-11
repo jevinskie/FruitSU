@@ -4,6 +4,9 @@ version = "0.1.0"
 description = "FruitSU - Tools for Apple Software Updates"
 authors = ["Jevin Sweval <jevinsweval@gmail.com>"]
 
+[tool.poetry.scripts]
+fruitsu-hfs = 'fruitsu.tools.hfs:main'
+
 [tool.poe.tasks]
 test = "pytest"
 test-v = "pytest -vvvv"
@@ -23,7 +26,8 @@ pretty-errors = "^1.2.25"
 attrs = "^21.4.0"
 fs = "^2.4.15"
 
-[tool.poetry.dev-dependencies]
+# [tool.poetry.dev-dependencies]
+[tool.poetry.group.dev.dependencies]
 pytest = "^7.0.0"
 poethepoet = "^0.12.3"
 pytest-clarity = "^1.0.1"
@@ -32,6 +36,11 @@ pytest-pycharm = "^0.7.0"
 pytest-randomly = "^3.11.0"
 pytest-cov = "^3.0.0"
 mypy = "^0.931"
+hypothesis = "^6.36.1"
+icontract = "^2.6.0"
+icontract-hypothesis = "^1.1.7"
+deal = "^4.19.1"
+ipython = "*"
 
 [build-system]
 requires = ["poetry-core @ git+https://github.com/jevinskie/poetry-core@jev/main"]
