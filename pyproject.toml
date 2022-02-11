@@ -27,6 +27,7 @@ attrs = "^21.4.0"
 fs = "^2.4.15"
 requests = "^2.27.1"
 wrapt = "^1.13.3"
+untangle = "^1.1.1"
 
 [tool.poetry.group.dev.dependencies]
 pytest = "^7.0.0"
@@ -41,7 +42,7 @@ hypothesis = "^6.36.1"
 icontract = "^2.6.0"
 icontract-hypothesis = "^1.1.7"
 deal = "^4.19.1"
-ipython = "*"
+ipython = "8.0.1"
 
 [build-system]
 requires = ["poetry-core @ git+https://github.com/jevinskie/poetry-core@jev/main"]

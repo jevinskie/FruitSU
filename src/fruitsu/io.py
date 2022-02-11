@@ -22,7 +22,6 @@ class SubscriptedIOBase:
 class SeekContextIOBase:
     @contextmanager
     def seek_ctx(self, offset: int, whence: int = io.SEEK_SET) -> int:
-        print(f"seek_ctx type self: {type(self)}")
         old_tell = self.tell()
         try:
             yield self.seek(offset, whence)
@@ -32,7 +31,7 @@ class SeekContextIOBase:
 class FancyRawIOBase(ObjectProxy, SubscriptedIOBase, SeekContextIOBase):
     pass
 
-@define(slots=False)
+@define
 class OffsetRawIOBase(FancyRawIOBase):
     fh: Final[FancyRawIOBase] = field(converter=FancyRawIOBase)
     off: Final[int] = 0
@@ -75,7 +74,7 @@ class OffsetRawIOBase(FancyRawIOBase):
         return self._idx
 
 
-@define(slots=False)
+@define
 class HTTPFile(FancyRawIOBase):
     url: Final[str]
     _ses: Final[requests.Session] = field(init=False, default=requests.Session())
