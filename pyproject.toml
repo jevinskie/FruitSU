@@ -18,21 +18,21 @@ testpaths = [
 [tool.poetry.dependencies]
 python = "^3.9"
 construct = "^2.10.67"
-rich = "^10.16.2"
+rich = "^11.2.0"
 pretty-errors = "^1.2.25"
-attrs = "^20.3.0"
+attrs = "^21.4.0"
 fs = "^2.4.15"
 
 [tool.poetry.dev-dependencies]
-pytest = "^6.2.5"
-poethepoet = "^0.10.0"
-pytest-clarity = "^0.3.0a0"
+pytest = "^7.0.0"
+poethepoet = "^0.12.3"
+pytest-clarity = "^1.0.1"
 six = "^1.16.0"
 pytest-pycharm = "^0.7.0"
 pytest-randomly = "^3.11.0"
-pytest-cov = "^2.12.1"
-mypy = "^0.812"
+pytest-cov = "^3.0.0"
+mypy = "^0.931"
 
 [build-system]
-requires = ["poetry-core @ git+https://github.com/python-poetry/poetry-core.git@master"]
+requires = ["poetry-core @ git+https://github.com/jevinskie/poetry-core@jev/main"]
 build-backend = "poetry.core.masonry.api"
