@@ -8,7 +8,7 @@ import requests
 from wrapt import ObjectProxy
 
 
-class SubscriptedIOBase:
+class SubscriptedIOBaseMixin:
     sz: int
     blksz: Optional[int]
 
@@ -27,7 +27,7 @@ class SubscriptedIOBase:
         return buf
 
 
-class SeekContextIOBase:
+class SeekContextIOBaseMixin:
     @contextmanager
     def seek_ctx(self, offset: int, whence: int = io.SEEK_SET) -> int:
         old_tell = self.tell()
@@ -37,12 +37,12 @@ class SeekContextIOBase:
             self.seek(old_tell)
 
 
-class FancyRawIOBase(ObjectProxy, SubscriptedIOBase, SeekContextIOBase):
+class FancyRawIOBase(ObjectProxy, SubscriptedIOBaseMixin, SeekContextIOBaseMixin):
     pass
 
 
 @define
-class OffsetRawIOBase(SubscriptedIOBase, SeekContextIOBase):
+class OffsetRawIOBase(SubscriptedIOBaseMixin, SeekContextIOBaseMixin):
     fh: Final[FancyRawIOBase] = field(converter=FancyRawIOBase)
     off: Final[int] = 0
     sz: Final[int] = -1
@@ -52,20 +52,19 @@ class OffsetRawIOBase(SubscriptedIOBase, SeekContextIOBase):
     _idx: Final[int] = field(init=False, default=0)
 
     def __attrs_post_init__(self) -> None:
-        old_parent_idx = self.fh.tell()
-        self.fh.seek(0, io.SEEK_END)
-        self._parent_end = self.fh.tell()
-        self.fh.seek(old_parent_idx, io.SEEK_SET)
+        with self.fh.seek_ctx(0, io.SEEK_END):
+            self._parent_end = self.fh.tell()
         if self.sz == -1:
             self.sz = self._parent_end - self.off
         self._end = self.off + self.sz
 
     def read(self, size: int = -1) -> bytes:
         if size == -1:
-            size = self._end - self._idx
-        if self._idx + size > self._end:
+            size = self.sz - self._idx
+        if self._idx + size > self.sz:
             raise ValueError("out of bounds size")
-        buf = self.fh.read(size)
+        with self.fh.seek_ctx(self.off + self._idx, io.SEEK_SET):
+            buf = self.fh.read(size)
         self._idx += len(buf)
         return buf
 
@@ -75,11 +74,13 @@ class OffsetRawIOBase(SubscriptedIOBase, SeekContextIOBase):
     def seek(self, offset: int, whence: int = io.SEEK_SET) -> int:
         parent_off = offset
         if whence == io.SEEK_SET:
+            # add beginning gap
             parent_off += self.off
         elif whence == io.SEEK_END:
+            # add end gap
             parent_off += self._parent_end - self._end
-        self._idx = self.fh.seek(parent_off, whence) - self.off
-        if self._idx < 0 or self._idx > self.sz:
+        self._idx = parent_off - self.off
+        if not (0 <= self._idx <= self.sz):
             raise ValueError("out of bounds seek")
         return self._idx
 

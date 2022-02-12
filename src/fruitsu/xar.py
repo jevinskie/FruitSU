@@ -17,7 +17,7 @@ from rich import (
 )
 
 from .io import FancyRawIOBase, OffsetRawIOBase
-from .fstree import INode, DirEntType
+from .fs import INode, DirEntType
 
 
 class ChecksumAlgorithmEnum(enum.IntEnum):
@@ -92,9 +92,9 @@ class XARFile:
         print(f"hdr: {self.hdr}")
         print(f"self.fh: {self.fh} self.fh.seek_ctx: {self.fh.seek_ctx}")
         xml_comp_fh = OffsetRawIOBase(self.fh, self.hdr.size, self.hdr.toc_length_compressed)
-        print(f"xml_comp_fh: {xml_comp_fh[:4].hex()}")
-        xml_comp_buf = xml_comp_fh[:]
-        print(f"len(xml_comp_buf): {len(xml_comp_buf)}")
+        # print(f"xml_comp_fh: {xml_comp_fh[:4].hex()}")
+        xml_comp_buf = xml_comp_fh.read()
+        print(f"len(xml_comp_buf): {len(xml_comp_buf)} {len(xml_comp_fh[:])}")
         xml = zlib.decompress(xml_comp_fh[:]).decode('utf-8')
         with open('toc.xml', 'w') as toc_fh:
             toc_fh.write(xml)

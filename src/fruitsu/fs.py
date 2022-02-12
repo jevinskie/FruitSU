@@ -50,4 +50,4 @@ class INode(NodeMixin):
 
     def dump(self):
         for pre, fill, node in RenderTree(self):
-            print('{}{}'.format(pre, node.name))
+            rprint('[yellow]{}[/]{}'.format(pre, node.name))
