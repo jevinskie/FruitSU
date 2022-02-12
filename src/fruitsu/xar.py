@@ -52,20 +52,27 @@ class XARTOC:
         print("TREE:")
         root.dump()
         print("/TREE")
-        for f in xml.xar.toc.file:
-            name = f.name.cdata
-            ty = {
-                'directory': DirEntType.DIR,
-                'file': DirEntType.REG,
-                'link': DirEntType.LNK,
-            }[f.type.cdata]
-            sz = 0
-            sz_comp = None
-            if ty == DirEntType.REG:
-                sz = int(f.data.size.cdata)
-                if f.data.encoding["style"] != "application/octet-stream":
-                    sz_comp = int(f.data.length.cdata)
-            INode(parent=root, name=name, size=sz, size_comp=sz_comp, type=ty)
+
+        def add_files_children(node, file):
+            if hasattr(file, 'file'):
+                for f in file.file:
+                    name = f.name.cdata
+                    ty = {
+                        'directory': DirEntType.DIR,
+                        'file': DirEntType.REG,
+                        'symlink': DirEntType.LNK,
+                    }[f.type.cdata]
+                    sz = 0
+                    sz_comp = None
+                    if ty == DirEntType.REG:
+                        sz = int(f.data.size.cdata)
+                        if f.data.encoding["style"] != "application/octet-stream":
+                            sz_comp = int(f.data.length.cdata)
+                    child_node = INode(parent=node, name=name, size=sz, size_comp=sz_comp, type=ty)
+                    add_files_children(child_node, f)
+
+        add_files_children(root, xml.xar.toc)
+
         return cls(rootfs=root)
 
     def dump(self):
