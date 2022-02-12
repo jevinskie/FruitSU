@@ -42,7 +42,7 @@ XARHeader = Struct(
 
 @define
 class XARTOC:
-    pass
+    rootfs: Final[INode]
 
     @classmethod
     def from_xml(cls, xml):
@@ -50,9 +50,20 @@ class XARTOC:
         root = INode.root_node()
         for f in xml.xar.toc.file:
             name = f.name.cdata
-            
-            root.children.append(INode(f.n))
-
+            ty = {
+                'directory': DirEntType.DIR,
+                'file': DirEntType.REG,
+                'link': DirEntType.LNK,
+            }[f.type.cdata]
+            sz = 0
+            sz_comp = None
+            if ty == DirEntType.REG:
+                sz = int(f.data.size.cdata)
+                if f.data.encoding["style"] != "application/octet-stream":
+                    sz_comp = int(f.data.length.cdata)
+            root.children.append(INode(name=name, size=sz, size_comp=sz_comp, type=ty))
+        # print(root)
+        return cls(root)
 
 
 @define
@@ -74,9 +85,16 @@ class XARFile:
         xml = zlib.decompress(xml_comp_fh[:]).decode('utf-8')
         with open('toc.xml', 'w') as toc_fh:
             toc_fh.write(xml)
-        print(f"xml: {xml}")
-        self.toc = untangle.parse(xml)
-        rprint(self.toc)
+        self.toc = XARTOC.from_xml(xml)
 
     def dump(self):
         print(self)
+
+
+__all__ = [
+    "ChecksumAlgorithmEnum",
+    "ChecksumAlgorithm",
+    "XARTOC",
+    "XARFile",
+    "XARHeader",
+]

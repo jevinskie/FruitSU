@@ -13,4 +13,5 @@ def test_xar_etc():
     with open(etc_xar_path, 'rb') as xar_fh:
         xar = XARFile(xar_fh.raw)
         print(f'xar: {xar}')
-        xar.dump()
+        # xar.dump()
+        xar.toc.rootfs.dump()

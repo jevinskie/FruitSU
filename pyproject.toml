@@ -11,6 +11,7 @@ fruitsu-hfs = 'fruitsu.tools.hfs:main'
 test = "pytest"
 test-v = "pytest -vvvv"
 test-vv = "pytest -vvvv --capture=tee-sys"
+ipy = "ipython"
 
 [tool.pytest.ini_options]
 addopts = "--import-mode=append"

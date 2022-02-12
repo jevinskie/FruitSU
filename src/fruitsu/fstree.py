@@ -1,10 +1,10 @@
 import enum
 from pathlib import Path
-from typing import Final
+from typing import Final, Optional
 from typing_extensions import Self
 
-import anytree
-from attrs import define, field
+from anytree import Node, NodeMixin, RenderTree
+from attrs import define, field, Factory
 
 from rich import (
     print as rprint,
@@ -23,16 +23,20 @@ class InoVendor:
 class DirEntType(enum.Enum):
     DIR = 0
     REG = 1
-    LINK = 2
+    LNK = 2
 
 @define
-class INode:
+class INode(NodeMixin):
     name: str
-    size: int
     type: Final[DirEntType]
+    size: int = 0
+    size_comp: Optional[int] = None
     children: [Self] = []
-    _ino: Final[int] = field(default=InoVendor.next)
+    _ino: Final[int] = field(init=False, default=Factory(InoVendor.next))
 
     @classmethod
     def root_node(cls):
-        return cls("/", 0, DirEntType.DIR)
+        return cls(name="/", type=DirEntType.DIR)
+
+    def dump(self):
+        RenderTree(self)
