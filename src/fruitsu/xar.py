@@ -6,6 +6,7 @@ from pathlib import Path
 from typing import Final
 import zlib
 
+from anytree import RenderTree
 from attrs import define, field
 from construct import *
 import untangle
@@ -48,6 +49,9 @@ class XARTOC:
     def from_xml(cls, xml):
         xml = untangle.parse(xml)
         root = INode.root_node()
+        print("TREE:")
+        root.dump()
+        print("/TREE")
         for f in xml.xar.toc.file:
             name = f.name.cdata
             ty = {
@@ -61,9 +65,11 @@ class XARTOC:
                 sz = int(f.data.size.cdata)
                 if f.data.encoding["style"] != "application/octet-stream":
                     sz_comp = int(f.data.length.cdata)
-            root.children.append(INode(name=name, size=sz, size_comp=sz_comp, type=ty))
-        # print(root)
-        return cls(root)
+            INode(parent=root, name=name, size=sz, size_comp=sz_comp, type=ty)
+        return cls(rootfs=root)
+
+    def dump(self):
+        print(self)
 
 
 @define
@@ -86,9 +92,6 @@ class XARFile:
         with open('toc.xml', 'w') as toc_fh:
             toc_fh.write(xml)
         self.toc = XARTOC.from_xml(xml)
-
-    def dump(self):
-        print(self)
 
 
 __all__ = [

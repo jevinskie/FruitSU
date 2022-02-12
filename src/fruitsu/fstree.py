@@ -1,6 +1,6 @@
 import enum
 from pathlib import Path
-from typing import Final, Optional
+from typing import Final, Optional, List
 from typing_extensions import Self
 
 from anytree import Node, NodeMixin, RenderTree
@@ -25,18 +25,29 @@ class DirEntType(enum.Enum):
     REG = 1
     LNK = 2
 
-@define
 class INode(NodeMixin):
     name: str
     type: Final[DirEntType]
-    size: int = 0
-    size_comp: Optional[int] = None
-    children: [Self] = []
-    _ino: Final[int] = field(init=False, default=Factory(InoVendor.next))
+    size: int
+    size_comp: Optional[int]
+    _ino: Final[int]
+
+    def __init__(self, name: str, type: Final[DirEntType], size: int = 0, size_comp: Optional[int] = None,
+                 parent: Self = None, children: Optional[List[Self]] = None):
+        super().__init__()
+        self.name = name
+        self.type = type
+        self.size = size
+        self.size_comp = size_comp
+        self.parent = parent
+        if type == DirEntType.DIR:
+            self.children = children if children else []
+        self._ino = InoVendor.next()
 
     @classmethod
     def root_node(cls):
-        return cls(name="/", type=DirEntType.DIR)
+        return cls(parent=None, name="rootfs", type=DirEntType.DIR)
 
     def dump(self):
-        RenderTree(self)
+        for pre, fill, node in RenderTree(self):
+            print('{}{}'.format(pre, node.name))
