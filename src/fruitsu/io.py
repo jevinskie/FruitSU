@@ -126,6 +126,6 @@ class HTTPFile(FancyRawIOBase):
             self._idx += offset
         elif whence == io.SEEK_END:
             self._idx = self._sz
-        if self._idx < 0 or self._idx > self._sz:
+        if not (0 <= self._idx <= self._sz):
             raise ValueError("out of bounds seek")
         return self._idx

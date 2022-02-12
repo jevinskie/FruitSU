@@ -130,19 +130,19 @@ class XARFS(fs.base.FS):
         pass
 
     def makedir(self, path: str, permissions: Optional[Permissions] = None, recreate: bool = False) -> SubFS[FS]:
-        pass
+        raise NotWriteable("XAR supports only reading")
 
     def openbin(self, path: str, mode: str = "r", buffering: int = -1, **kwargs) -> BinaryIO:
         pass
 
     def remove(self, path: str) -> None:
-        pass
+        raise NotWriteable("XAR supports only reading")
 
     def removedir(self, path: str) -> None:
-        pass
+        raise NotWriteable("XAR supports only reading")
 
     def setinfo(self, path: str, info: RawInfo) -> None:
-        pass
+        raise NotWriteable("XAR supports only reading")
 
 
 @fs.opener.registry.install
