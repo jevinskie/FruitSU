@@ -1,4 +1,5 @@
 from contextlib import contextmanager
+import enum
 import io
 from typing import Final, Optional
 from typing_extensions import Self
@@ -6,6 +7,19 @@ from typing_extensions import Self
 from attrs import define, field
 import requests
 from wrapt import ObjectProxy
+
+
+class DirEntType(enum.Enum):
+    DIR = 0
+    REG = 1
+    LINK = 2
+
+@define
+class DirEnt:
+    name: str
+    size: int
+    type: Final[DirEntType]
+
 
 class SubscriptedIOBase:
     sz: int
@@ -25,6 +39,7 @@ class SubscriptedIOBase:
         self.seek(old_tell, io.SEEK_SET)
         return buf
 
+
 class SeekContextIOBase:
     @contextmanager
     def seek_ctx(self, offset: int, whence: int = io.SEEK_SET) -> int:
@@ -34,8 +49,10 @@ class SeekContextIOBase:
         finally:
             self.seek(old_tell)
 
+
 class FancyRawIOBase(ObjectProxy, SubscriptedIOBase, SeekContextIOBase):
     pass
+
 
 @define
 class OffsetRawIOBase(SubscriptedIOBase, SeekContextIOBase):

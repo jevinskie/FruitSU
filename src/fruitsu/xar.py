@@ -1,8 +1,8 @@
 
 import bz2
 import enum
-import gzip
 import lzma
+from pathlib import Path
 from typing import Final
 import zlib
 
@@ -13,6 +13,7 @@ import untangle
 from rich import print as rprint
 
 from .io import FancyRawIOBase, OffsetRawIOBase
+
 
 class ChecksumAlgorithmEnum(enum.IntEnum):
     none = 0
@@ -34,9 +35,14 @@ XARHeader = Struct(
     'padding' / Padding(this.size - this._padding_begin),
 )
 
+
 @define
 class XARTOC:
     pass
+
+    @classmethod
+    def from_xml(cls, xml):
+        pass
 
 
 @define
