@@ -1,5 +1,4 @@
 from contextlib import contextmanager
-import enum
 import io
 from typing import Final, Optional
 from typing_extensions import Self
@@ -7,18 +6,6 @@ from typing_extensions import Self
 from attrs import define, field
 import requests
 from wrapt import ObjectProxy
-
-
-class DirEntType(enum.Enum):
-    DIR = 0
-    REG = 1
-    LINK = 2
-
-@define
-class DirEnt:
-    name: str
-    size: int
-    type: Final[DirEntType]
 
 
 class SubscriptedIOBase:

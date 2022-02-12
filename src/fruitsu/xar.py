@@ -10,9 +10,13 @@ from attrs import define, field
 from construct import *
 import untangle
 
-from rich import print as rprint
+from rich import (
+    print as rprint,
+    inspect as rinspect,
+)
 
 from .io import FancyRawIOBase, OffsetRawIOBase
+from .fstree import INode, DirEntType
 
 
 class ChecksumAlgorithmEnum(enum.IntEnum):
@@ -42,7 +46,13 @@ class XARTOC:
 
     @classmethod
     def from_xml(cls, xml):
-        pass
+        xml = untangle.parse(xml)
+        root = INode.root_node()
+        for f in xml.xar.toc.file:
+            name = f.name.cdata
+            
+            root.children.append(INode(f.n))
+
 
 
 @define
