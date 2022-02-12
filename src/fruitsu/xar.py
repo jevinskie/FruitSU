@@ -3,12 +3,17 @@ import bz2
 import enum
 import lzma
 from pathlib import Path
-from typing import Final
+from typing import Final, Optional, Collection
 import zlib
 
 from anytree import RenderTree
 from attrs import define, field
 from construct import *
+import fs.base
+from fs.base import FS, SubFS, Permissions, RawInfo, Info, BinaryIO
+from fs.opener.errors import *
+from fs.opener.parse import ParseResult, ParseError
+import fs.opener.registry
 import untangle
 
 from rich import (
@@ -18,6 +23,16 @@ from rich import (
 
 from .io import FancyRawIOBase, OffsetRawIOBase
 from .fs import INode, DirEntType
+
+
+__all__ = [
+    "ChecksumAlgorithmEnum",
+    "ChecksumAlgorithm",
+    "XARTOC",
+    "XARFile",
+    "XARFS",
+    "XARHeader",
+]
 
 
 class ChecksumAlgorithmEnum(enum.IntEnum):
@@ -101,10 +116,40 @@ class XARFile:
         self.toc = XARTOC.from_xml(xml)
 
 
-__all__ = [
-    "ChecksumAlgorithmEnum",
-    "ChecksumAlgorithm",
-    "XARTOC",
-    "XARFile",
-    "XARHeader",
-]
+@define
+class XARFS(fs.base.FS):
+    resource: Final[str]
+
+    def __attrs_post_init(self):
+        print(f"XARFS resource: {self.resource}")
+
+    def getinfo(self, path:str , namespaces: Optional[Collection[str]] = None) -> Info:
+        pass
+
+    def listdir(self, path: str) -> [str]:
+        pass
+
+    def makedir(self, path: str, permissions: Optional[Permissions] = None, recreate: bool = False) -> SubFS[FS]:
+        pass
+
+    def openbin(self, path: str, mode: str = "r", buffering: int = -1, **kwargs) -> BinaryIO:
+        pass
+
+    def remove(self, path: str) -> None:
+        pass
+
+    def removedir(self, path: str) -> None:
+        pass
+
+    def setinfo(self, path: str, info: RawInfo) -> None:
+        pass
+
+
+@fs.opener.registry.install
+class XARFSOpener(fs.opener.Opener):
+    protocols = ["xar"]
+
+    def open_fs(self, fs_url: str, parse_result: ParseResult, writeable: bool, create: bool, cwd: str):
+        if create or writeable:
+            raise NotWriteable("XAR supports only reading")
+        return XARFS(parse_result.resource)
