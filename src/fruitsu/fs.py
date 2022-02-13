@@ -1,10 +1,14 @@
+from __future__ import annotations
+
 import enum
 from pathlib import Path
 from typing import Final, Optional, List
 from typing_extensions import Self
 
 from anytree import Node, NodeMixin, RenderTree
+from anytree.resolver import Resolver, ChildResolverError, ResolverError
 from attrs import define, field, Factory
+from fs.enums import ResourceType
 
 from rich import (
     print as rprint,
@@ -44,6 +48,18 @@ class INode(NodeMixin):
             self.children = children if children else []
         self._ino = InoVendor.next()
 
+    @property
+    def is_dir(self) -> bool:
+        return self.type == DirEntType.DIR
+
+    @property
+    def pyfs_type(self) -> ResourceType:
+        return {
+            DirEntType.DIR: ResourceType.directory,
+            DirEntType.REG: ResourceType.file,
+            DirEntType.LNK: ResourceType.symlink,
+        }[self.type]
+
     @classmethod
     def root_node(cls):
         return cls(parent=None, name="rootfs", type=DirEntType.DIR)
@@ -51,3 +67,17 @@ class INode(NodeMixin):
     def dump(self):
         for pre, fill, node in RenderTree(self):
             rprint('[yellow]{}[/]{}'.format(pre, node.name))
+
+    @staticmethod
+    def _norm_path(path: str):
+        if path[0] == "/":
+            return "/rootfs" + path
+        return path
+
+    def lookup(self, path: str) -> INode:
+        r = Resolver('name')
+        try:
+            res = r.get(self, self._norm_path(path))
+        except (ResolverError, ChildResolverError):
+            res = None
+        return res

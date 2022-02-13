@@ -7,6 +7,9 @@ authors = ["Jevin Sweval <jevinsweval@gmail.com>"]
 [tool.poetry.scripts]
 fruitsu-hfs = 'fruitsu.tools.hfs:main'
 
+[tool.poetry.plugins."fs.opener"]
+"xar" = "fruitsu.xar:XARFSOpener"
+
 [tool.poe.tasks]
 test = "pytest"
 test-v = "pytest -vvvv"
@@ -29,8 +32,9 @@ fs = "^2.4.15"
 requests = "^2.27.1"
 wrapt = "^1.13.3"
 untangle = "^1.1.1"
-typing-extensions = "^4.0.1"
+typing-extensions = "^4.1.0"
 anytree = "^2.8.0"
+fusefs = "^0.0.2"
 
 [tool.poetry.group.dev.dependencies]
 pytest = "^7.0.1"

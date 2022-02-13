@@ -1,18 +1,28 @@
 
 import bz2
 import enum
+import io
 import lzma
 from pathlib import Path
-from typing import Final, Optional, Collection
+from typing import Final, Optional, Collection, BinaryIO, Mapping
 import zlib
 
 from anytree import RenderTree
 from attrs import define, field
 from construct import *
-import fs.base
-from fs.base import FS, SubFS, Permissions, RawInfo, Info, BinaryIO
+from construct import (
+    Optional as ConstructOptional,
+    Mapping as ConstructMapping,
+)
+from typing import Optional, Mapping
+from fs.base import FS
+from fs.enums import ResourceType
+from fs.errors import *
+from fs.info import Info
+from fs.permissions import Permissions
+from fs.subfs import SubFS
 from fs.opener.errors import *
-from fs.opener.parse import ParseResult, ParseError
+from fs.opener.parse import ParseResult
 import fs.opener.registry
 import untangle
 
@@ -98,7 +108,7 @@ class XARTOC:
 class XARFile:
     fh: Final[FancyRawIOBase] = field(converter=FancyRawIOBase)
     hdr: XARHeader = field(init=False)
-    toc: untangle.Element = field(init=False)
+    toc: Final[XARTOC] = field(init=False)
 
     def __attrs_post_init__(self):
         with self.fh.seek_ctx(0):
@@ -118,22 +128,32 @@ class XARFile:
 
 @define
 class XARFS(fs.base.FS):
-    resource: Final[str]
+    file: Final[FancyRawIOBase]
+    xar: Final[XARFile] = field(init=False)
 
-    def __attrs_post_init(self):
-        print(f"XARFS resource: {self.resource}")
+    def __attrs_post_init__(self):
+        if not isinstance(self.file, BinaryIO):
+            self.file = FancyRawIOBase(io.FileIO(self.file, 'r'))
+        self.xar = XARFile(self.file)
 
-    def getinfo(self, path:str , namespaces: Optional[Collection[str]] = None) -> Info:
-        pass
+    def getinfo(self, path: str, namespaces: Optional[Collection[str]] = None) -> Info:
+        ino = self.xar.toc.rootfs.lookup(path)
+        if ino is None:
+            raise ResourceNotFound(path)
+        return Info({"basic": {"name": ino.name, "is_dir": ino.is_dir},
+                     "details": {"type": ino.pyfs_type, "size": ino.size}})
 
     def listdir(self, path: str) -> [str]:
-        pass
+        ino = self.xar.toc.rootfs.lookup(path)
+        if ino is None:
+            raise ResourceNotFound(path)
+        return [ino.name for ino in ino.children]
 
     def makedir(self, path: str, permissions: Optional[Permissions] = None, recreate: bool = False) -> SubFS[FS]:
         raise NotWriteable("XAR supports only reading")
 
     def openbin(self, path: str, mode: str = "r", buffering: int = -1, **kwargs) -> BinaryIO:
-        pass
+        raise NotImplementedError
 
     def remove(self, path: str) -> None:
         raise NotWriteable("XAR supports only reading")
@@ -141,11 +161,11 @@ class XARFS(fs.base.FS):
     def removedir(self, path: str) -> None:
         raise NotWriteable("XAR supports only reading")
 
-    def setinfo(self, path: str, info: RawInfo) -> None:
+    def setinfo(self, path: str, info: Mapping[str, Mapping[str, object]]) -> None:
         raise NotWriteable("XAR supports only reading")
 
 
-@fs.opener.registry.install
+# @fs.opener.registry.install
 class XARFSOpener(fs.opener.Opener):
     protocols = ["xar"]
 
