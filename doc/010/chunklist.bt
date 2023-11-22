@@ -1,0 +1,81 @@
+typedef ubyte uint8_t;
+typedef uint32 uint32_t;
+typedef uint64 uint64_t;
+
+#define SHA256_DIGEST_LENGTH 32
+
+/*
+ * Chunklist file format
+ */
+#define CHUNKLIST_MAGIC                 0x4C4B4E43
+#define CHUNKLIST_FILE_VERSION_10       1
+#define CHUNKLIST_CHUNK_METHOD_10       1
+#define CHUNKLIST_SIGNATURE_METHOD_REV1 1
+#define CHUNKLIST_REV1_SIG_LEN          256
+#define CHUNKLIST_PUBKEY_LEN            (2048/8)
+#define CHUNKLIST_SIGNATURE_LEN         (2048/8)
+
+struct chunklist_hdr {
+    uint32_t cl_magic <format=hex,comment=MagicCommentFunc>;
+    uint32_t cl_header_size;
+    uint8_t  cl_file_ver;
+    uint8_t  cl_chunk_method;
+    uint8_t  cl_sig_method;
+    uint8_t  __unused1;
+    uint64_t cl_chunk_count;
+    uint64_t cl_chunk_offset;
+    uint64_t cl_sig_offset;
+};
+
+struct chunk_sha256_digest {
+    uint8_t digest[SHA256_DIGEST_LENGTH];
+};
+
+struct chunklist_chunk {
+    uint32_t chunk_size;
+    chunk_sha256_digest chunk_sha256 <read=HexSha256(this)>;
+};
+
+struct chunklist_pubkey_key {
+    uint8_t key[CHUNKLIST_PUBKEY_LEN];
+};
+
+struct chunklist_pubkey {
+    chunklist_pubkey_key key <read=HexKey(this)>;
+};
+
+struct chunklist_file {
+    struct chunklist_hdr hdr;
+    FSeek(hdr.cl_chunk_offset);
+    chunklist_chunk chunks[hdr.cl_chunk_count];
+    FSeek(hdr.cl_sig_offset);
+    chunklist_pubkey pubkey;
+};
+
+string MagicCommentFunc(uint32_t &magic){
+    if (magic != CHUNKLIST_MAGIC) {
+        return Str("Bad chunklist magic, got 0x%08X expected 0x%08X", magic, CHUNKLIST_MAGIC);
+    } else {
+        return "";
+    }
+}
+
+string HexSha256(chunk_sha256_digest &sha256) {
+    string s = "";
+    uint32_t i;
+    for (i = 0; i < sizeof(chunk_sha256_digest); ++i) {
+        s = Str("%s%02x", s, sha256.digest[i]);
+    }
+    return s;
+}
+
+string HexKey(chunklist_pubkey_key &key) {
+    string s = "";
+    uint32_t i;
+    for (i = 0; i < sizeof(chunklist_pubkey_key); ++i) {
+        s = Str("%s%02x", s, key.key[i]);
+    }
+    return s;
+}
+
+chunklist_file chunklist; 
