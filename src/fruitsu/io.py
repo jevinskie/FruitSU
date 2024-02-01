@@ -1,10 +1,10 @@
-from contextlib import contextmanager
 import io
+from contextlib import contextmanager
 from typing import Final, Optional
-from typing_extensions import Self
 
-from attrs import define, field
 import requests
+from attrs import define, field
+from typing_extensions import Self
 from wrapt import ObjectProxy
 
 
@@ -111,7 +111,9 @@ class HTTPFile(FancyRawIOBase):
             size = self._sz - self._idx
         if self._idx + size > self._sz:
             raise ValueError("out of bounds size")
-        buf = self._ses.get(self.url, headers={"Range": f"bytes={self._idx}-{self._idx + size - 1}"}).content
+        buf = self._ses.get(
+            self.url, headers={"Range": f"bytes={self._idx}-{self._idx + size - 1}"}
+        ).content
         assert len(buf) == size
         self._idx += size
         return buf

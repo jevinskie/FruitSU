@@ -1,16 +1,29 @@
 #!/usr/bin/env python3
 
 import datetime
+import io
 import math
 from typing import Final
 
 import attr
 from attrs import define
-from construct import *
-from rich import print as rprint
-from rich import inspect as rinspect
+from construct import (
+    Adapter,
+    Byte,
+    Const,
+    Enum,
+    Int8sb,
+    Int8ub,
+    Int16ub,
+    Int32ub,
+    Int64ub,
+    PaddedString,
+    Struct,
+    Union,
+)
 
 from .io import OffsetRawIOBase
+
 
 @define
 class Region:
@@ -76,7 +89,7 @@ class Region:
 #   UniChar unicode[255];
 # };
 
-HFSUniStr255 = PaddedString(255, 'utf16')
+HFSUniStr255 = PaddedString(255, "utf16")
 
 # HFS epoch: January 1, 1904, GMT
 # 24,107 days before 1970-01-01T00:00:00
@@ -103,72 +116,73 @@ HFSDate = HFSDateAdapter(Int32ub)
 HFSCatalogNodeID = Int32ub
 
 HFSPlusExtentDescriptor = Struct(
-    'startBlock' / Int32ub,
-    'blockCount' / Int32ub,
+    "startBlock" / Int32ub,
+    "blockCount" / Int32ub,
 )
 
 HFSPlusExtentRecord = HFSPlusExtentDescriptor[8]
 
 HFSPlusForkData = Struct(
-    'logicalSize' / Int64ub,
-    'clumpSize' / Int32ub,
-    'totalBlocks' / Int32ub,
-    'extents' / HFSPlusExtentRecord,
+    "logicalSize" / Int64ub,
+    "clumpSize" / Int32ub,
+    "totalBlocks" / Int32ub,
+    "extents" / HFSPlusExtentRecord,
 )
 
 HFSPlusVolumeHeader = Struct(
-    'signature' / Const(b'H+'),
-    'version' / Int16ub,
-    'attributes' / Int32ub,
-    'lastMountedVersion' / Int32ub,
-    'jounalInfoBlock' / Int32ub,
-    'createDate' / HFSDate,
-    'modifyDate' / HFSDate,
-    'backupDate' / HFSDate,
-    'checkedDate' / HFSDate,
-    'fileCount' / Int32ub,
-    'folderCount' / Int32ub,
-    'blockSize' / Int32ub,
-    'totalBlocks' / Int32ub,
-    'freeBlocks' / Int32ub,
-    'nextAllocation' / Int32ub,
-    'rsrcClumpSize' / Int32ub,
-    'dataClumpSize' / Int32ub,
-    'nextCatalogID' / HFSCatalogNodeID,
-    'writeCount' / Int32ub,
-    'encodingsBitmap' / Int64ub,
-    'finderInfo' / Int32ub[8],
-    'allocationFile' / HFSPlusForkData,
-    'extentsFile' / HFSPlusForkData,
-    'catalogFile' / HFSPlusForkData,
-    'attributesFile' / HFSPlusForkData,
-    'startupFile' / HFSPlusForkData,
+    "signature" / Const(b"H+"),
+    "version" / Int16ub,
+    "attributes" / Int32ub,
+    "lastMountedVersion" / Int32ub,
+    "jounalInfoBlock" / Int32ub,
+    "createDate" / HFSDate,
+    "modifyDate" / HFSDate,
+    "backupDate" / HFSDate,
+    "checkedDate" / HFSDate,
+    "fileCount" / Int32ub,
+    "folderCount" / Int32ub,
+    "blockSize" / Int32ub,
+    "totalBlocks" / Int32ub,
+    "freeBlocks" / Int32ub,
+    "nextAllocation" / Int32ub,
+    "rsrcClumpSize" / Int32ub,
+    "dataClumpSize" / Int32ub,
+    "nextCatalogID" / HFSCatalogNodeID,
+    "writeCount" / Int32ub,
+    "encodingsBitmap" / Int64ub,
+    "finderInfo" / Int32ub[8],
+    "allocationFile" / HFSPlusForkData,
+    "extentsFile" / HFSPlusForkData,
+    "catalogFile" / HFSPlusForkData,
+    "attributesFile" / HFSPlusForkData,
+    "startupFile" / HFSPlusForkData,
 )
 
 HFSPlusCatalogKey = Struct(
-    'keyLength' / Int16ub,
-    'parentID' / HFSCatalogNodeID,
-    'nodeName' / HFSUniStr255,
+    "keyLength" / Int16ub,
+    "parentID" / HFSCatalogNodeID,
+    "nodeName" / HFSUniStr255,
 )
 
 kMaxKeyLength: Final = 520
 
 BTNodeID = Int32ub
 
-BTNodeKind = Enum(Int8sb,
-    kBTLeafNode = -1,
-    kBTIndexNode = 0,
-    kBTHeaderNode = 1,
-    kBTMapNode = 2,
+BTNodeKind = Enum(
+    Int8sb,
+    kBTLeafNode=-1,
+    kBTIndexNode=0,
+    kBTHeaderNode=1,
+    kBTMapNode=2,
 )
 
 BTNodeDescriptor = Struct(
-    'fLink' / BTNodeID,
-    'bLink' / BTNodeID,
-    'kind' / BTNodeKind,
-    'height' / Int8ub,
-    'numRecords' / Int16ub,
-    'reserved' / Int16ub,
+    "fLink" / BTNodeID,
+    "bLink" / BTNodeID,
+    "kind" / BTNodeKind,
+    "height" / Int8ub,
+    "numRecords" / Int16ub,
+    "reserved" / Int16ub,
 )
 
 # struct BTHeaderRec {
@@ -189,27 +203,28 @@ BTNodeDescriptor = Struct(
 # 	u_int32_t 	reserved3[16];		/* reserved */
 
 BTHeaderRec = Struct(
-    'treeDepth' / Int16ub,
-    'rootNode' / Int32ub,
-    'leafRecords' / Int32ub,
-    'firstLeafNode' / Int32ub,
-    'lastLeafNone' / Int32ub,
-    'nodeSize' / Int16ub,
-    'maxKeyLength' / Int16ub,
-    'totalNodes' / Int32ub,
-    'freeNodes' / Int32ub,
-    'reserved1' / Int16ub,
-    'clumpSize' / Int32ub,
-    'btreeType' / Int8ub,
-    'keyCompareType' / Int8ub,
-    'attributes' / Int32ub,
-    'reserved3' / Int32ub[16],
+    "treeDepth" / Int16ub,
+    "rootNode" / Int32ub,
+    "leafRecords" / Int32ub,
+    "firstLeafNode" / Int32ub,
+    "lastLeafNone" / Int32ub,
+    "nodeSize" / Int16ub,
+    "maxKeyLength" / Int16ub,
+    "totalNodes" / Int32ub,
+    "freeNodes" / Int32ub,
+    "reserved1" / Int16ub,
+    "clumpSize" / Int32ub,
+    "btreeType" / Int8ub,
+    "keyCompareType" / Int8ub,
+    "attributes" / Int32ub,
+    "reserved3" / Int32ub[16],
 )
 
-BTreeKey = Union('rawData',
-    'length8' / Int8ub,
-    'length16' / Int16ub,
-    'rawData' / Byte[kMaxKeyLength+2],
+BTreeKey = Union(
+    "rawData",
+    "length8" / Int8ub,
+    "length16" / Int16ub,
+    "rawData" / Byte[kMaxKeyLength + 2],
 )
 
 
@@ -224,25 +239,27 @@ class HFS:
         hdr_buf = self.fh.read(HFSPlusVolumeHeader.sizeof())
         self.hdr = HFSPlusVolumeHeader.parse(hdr_buf)
         cat_ext = self.hdr.catalogFile.extents[0]
-        self.cat_file = Region.from_blks(cat_ext.startBlock, cat_ext.blockCount, self.hdr.blockSize)
+        self.cat_file = Region.from_blks(
+            cat_ext.startBlock, cat_ext.blockCount, self.hdr.blockSize
+        )
 
     def dump(self):
-        print(f'dumping: {self}')
-        print(f'HFSPlusVolumeHeader sz: {HFSPlusVolumeHeader.sizeof()}')
-        print(f'hdr: {self.hdr}')
+        print(f"dumping: {self}")
+        print(f"HFSPlusVolumeHeader sz: {HFSPlusVolumeHeader.sizeof()}")
+        print(f"hdr: {self.hdr}")
         assert self.hdr.catalogFile.extents[0].blockCount > 0
         assert self.hdr.catalogFile.extents[1].blockCount == 0
         blk_off = self.hdr.catalogFile.extents[0].startBlock * self.hdr.blockSize
-        cat_buf = self.fh[blk_off:self.hdr.catalogFile.logicalSize]
-        print(f'len(cat_buf) = {len(cat_buf)}')
-        with open('cat_buf.bin', 'wb') as f:
+        cat_buf = self.fh[blk_off : self.hdr.catalogFile.logicalSize]
+        print(f"len(cat_buf) = {len(cat_buf)}")
+        with open("cat_buf.bin", "wb") as f:
             f.write(cat_buf)
 
         root_node = BTNodeDescriptor.parse(cat_buf)
-        print(f'root_node: {root_node}')
+        print(f"root_node: {root_node}")
 
         first_bthdrrec = BTHeaderRec.parse(cat_buf[14:])
-        print(f'first_bthdrrec: {first_bthdrrec}')
+        print(f"first_bthdrrec: {first_bthdrrec}")
 
         # root_cat_key = BTreeKey.parse(cat_buf)
         # print(f'root_cat_key: {root_cat_key}')

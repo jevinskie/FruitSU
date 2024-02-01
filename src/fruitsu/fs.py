@@ -1,19 +1,16 @@
 from __future__ import annotations
 
 import enum
-from pathlib import Path
-from typing import Final, Optional, List
-from typing_extensions import Self
+from typing import Final, List, Optional
 
-from anytree import Node, NodeMixin, RenderTree
-from anytree.resolver import Resolver, ChildResolverError, ResolverError
-from attrs import define, field, Factory
+from anytree import NodeMixin, RenderTree
+from anytree.resolver import ChildResolverError, Resolver, ResolverError
 from fs.enums import ResourceType
-
 from rich import (
     print as rprint,
-    inspect as rinspect,
 )
+from typing_extensions import Self
+
 
 class InoVendor:
     _ino: int = 0
@@ -29,6 +26,7 @@ class DirEntType(enum.Enum):
     REG = 1
     LNK = 2
 
+
 class INode(NodeMixin):
     name: str
     type: Final[DirEntType]
@@ -36,8 +34,15 @@ class INode(NodeMixin):
     size_comp: Optional[int]
     _ino: Final[int]
 
-    def __init__(self, name: str, type: Final[DirEntType], size: int = 0, size_comp: Optional[int] = None,
-                 parent: Self = None, children: Optional[List[Self]] = None):
+    def __init__(
+        self,
+        name: str,
+        type: Final[DirEntType],
+        size: int = 0,
+        size_comp: Optional[int] = None,
+        parent: Self = None,
+        children: Optional[List[Self]] = None,
+    ):
         super().__init__()
         self.name = name
         self.type = type
@@ -66,7 +71,7 @@ class INode(NodeMixin):
 
     def dump(self):
         for pre, fill, node in RenderTree(self):
-            rprint('[yellow]{}[/]{}'.format(pre, node.name))
+            rprint("[yellow]{}[/]{}".format(pre, node.name))
 
     @staticmethod
     def _norm_path(path: str):
@@ -75,7 +80,7 @@ class INode(NodeMixin):
         return path
 
     def lookup(self, path: str) -> INode:
-        r = Resolver('name')
+        r = Resolver("name")
         try:
             res = r.get(self, self._norm_path(path))
         except (ResolverError, ChildResolverError):

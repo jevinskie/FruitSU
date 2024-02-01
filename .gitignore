@@ -1,11 +1,22 @@
-poetry.lock
+# Python
+**/__pycache__/
+/fruitsu.egg-info/
+/fruitsu/_version.py
 *.pyc
-__pycache__/
+poetry.lock
+
+# Testing
+/.tox/
 pytestdebug.log
-.tox/
-tests/fruitsu/InstallESD.dmg
+
 *.img
 *.bin
 *.gz
 *.zlib
 *.dmg
+
+# VS Code
+**/.vscode
+
+# PyCharm
+/.idea/

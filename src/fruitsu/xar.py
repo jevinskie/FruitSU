@@ -1,39 +1,22 @@
-
-import bz2
 import enum
 import io
-import lzma
-from pathlib import Path
-from typing import Final, Optional, Collection, BinaryIO, Mapping
 import zlib
+from typing import BinaryIO, Collection, Final, Mapping, Optional
 
-from anytree import RenderTree
-from attrs import define, field
-from construct import *
-from construct import (
-    Optional as ConstructOptional,
-    Mapping as ConstructMapping,
-)
-from typing import Optional, Mapping
-from fs.base import FS
-from fs.enums import ResourceType
-from fs.errors import *
-from fs.info import Info
-from fs.permissions import Permissions
-from fs.subfs import SubFS
-from fs.opener.errors import *
-from fs.opener.parse import ParseResult
 import fs.opener.registry
 import untangle
+from attrs import define, field
+from construct import Enum, Int16ub, Int32ub, Int64ub, Padding, Struct, Tell, this
+from fs.base import FS
+from fs.errors import ResourceNotFound
+from fs.info import Info
+from fs.opener.errors import NotWriteable
+from fs.opener.parse import ParseResult
+from fs.permissions import Permissions
+from fs.subfs import SubFS
 
-from rich import (
-    print as rprint,
-    inspect as rinspect,
-)
-
+from .fs import DirEntType, INode
 from .io import FancyRawIOBase, OffsetRawIOBase
-from .fs import INode, DirEntType
-
 
 __all__ = [
     "ChecksumAlgorithmEnum",
@@ -52,17 +35,18 @@ class ChecksumAlgorithmEnum(enum.IntEnum):
     sha256 = 3
     sha512 = 4
 
+
 ChecksumAlgorithm = Enum(Int32ub, ChecksumAlgorithmEnum)
 
 XARHeader = Struct(
-    'magic' / Int32ub,
-    'size' / Int16ub,
-    'version' / Int16ub,
-    'toc_length_compressed' / Int64ub,
-    'toc_length_uncompressed' / Int64ub,
-    'cksum_alg' / ChecksumAlgorithm,
-    '_padding_begin' / Tell,
-    'padding' / Padding(this.size - this._padding_begin),
+    "magic" / Int32ub,
+    "size" / Int16ub,
+    "version" / Int16ub,
+    "toc_length_compressed" / Int64ub,
+    "toc_length_uncompressed" / Int64ub,
+    "cksum_alg" / ChecksumAlgorithm,
+    "_padding_begin" / Tell,
+    "padding" / Padding(this.size - this._padding_begin),
 )
 
 
@@ -79,13 +63,13 @@ class XARTOC:
         print("/TREE")
 
         def add_files_children(node, file):
-            if hasattr(file, 'file'):
+            if hasattr(file, "file"):
                 for f in file.file:
                     name = f.name.cdata
                     ty = {
-                        'directory': DirEntType.DIR,
-                        'file': DirEntType.REG,
-                        'symlink': DirEntType.LNK,
+                        "directory": DirEntType.DIR,
+                        "file": DirEntType.REG,
+                        "symlink": DirEntType.LNK,
                     }[f.type.cdata]
                     sz = 0
                     sz_comp = None
@@ -93,7 +77,9 @@ class XARTOC:
                         sz = int(f.data.size.cdata)
                         if f.data.encoding["style"] != "application/octet-stream":
                             sz_comp = int(f.data.length.cdata)
-                    child_node = INode(parent=node, name=name, size=sz, size_comp=sz_comp, type=ty)
+                    child_node = INode(
+                        parent=node, name=name, size=sz, size_comp=sz_comp, type=ty
+                    )
                     add_files_children(child_node, f)
 
         add_files_children(root, xml.xar.toc)
@@ -116,12 +102,14 @@ class XARFile:
         self.hdr = XARHeader.parse(hdr_buf)
         print(f"hdr: {self.hdr}")
         print(f"self.fh: {self.fh} self.fh.seek_ctx: {self.fh.seek_ctx}")
-        xml_comp_fh = OffsetRawIOBase(self.fh, self.hdr.size, self.hdr.toc_length_compressed)
+        xml_comp_fh = OffsetRawIOBase(
+            self.fh, self.hdr.size, self.hdr.toc_length_compressed
+        )
         # print(f"xml_comp_fh: {xml_comp_fh[:4].hex()}")
         xml_comp_buf = xml_comp_fh.read()
         print(f"len(xml_comp_buf): {len(xml_comp_buf)} {len(xml_comp_fh[:])}")
-        xml = zlib.decompress(xml_comp_fh[:]).decode('utf-8')
-        with open('toc.xml', 'w') as toc_fh:
+        xml = zlib.decompress(xml_comp_fh[:]).decode("utf-8")
+        with open("toc.xml", "w") as toc_fh:
             toc_fh.write(xml)
         self.toc = XARTOC.from_xml(xml)
 
@@ -133,15 +121,19 @@ class XARFS(fs.base.FS):
 
     def __attrs_post_init__(self):
         if not isinstance(self.file, BinaryIO):
-            self.file = FancyRawIOBase(io.FileIO(self.file, 'r'))
+            self.file = FancyRawIOBase(io.FileIO(self.file, "r"))
         self.xar = XARFile(self.file)
 
     def getinfo(self, path: str, namespaces: Optional[Collection[str]] = None) -> Info:
         ino = self.xar.toc.rootfs.lookup(path)
         if ino is None:
             raise ResourceNotFound(path)
-        return Info({"basic": {"name": ino.name, "is_dir": ino.is_dir},
-                     "details": {"type": ino.pyfs_type, "size": ino.size}})
+        return Info(
+            {
+                "basic": {"name": ino.name, "is_dir": ino.is_dir},
+                "details": {"type": ino.pyfs_type, "size": ino.size},
+            }
+        )
 
     def listdir(self, path: str) -> [str]:
         ino = self.xar.toc.rootfs.lookup(path)
@@ -149,10 +141,17 @@ class XARFS(fs.base.FS):
             raise ResourceNotFound(path)
         return [ino.name for ino in ino.children]
 
-    def makedir(self, path: str, permissions: Optional[Permissions] = None, recreate: bool = False) -> SubFS[FS]:
+    def makedir(
+        self,
+        path: str,
+        permissions: Optional[Permissions] = None,
+        recreate: bool = False,
+    ) -> SubFS[FS]:
         raise NotWriteable("XAR supports only reading")
 
-    def openbin(self, path: str, mode: str = "r", buffering: int = -1, **kwargs) -> BinaryIO:
+    def openbin(
+        self, path: str, mode: str = "r", buffering: int = -1, **kwargs
+    ) -> BinaryIO:
         raise NotImplementedError
 
     def remove(self, path: str) -> None:
@@ -169,7 +168,14 @@ class XARFS(fs.base.FS):
 class XARFSOpener(fs.opener.Opener):
     protocols = ["xar"]
 
-    def open_fs(self, fs_url: str, parse_result: ParseResult, writeable: bool, create: bool, cwd: str):
+    def open_fs(
+        self,
+        fs_url: str,
+        parse_result: ParseResult,
+        writeable: bool,
+        create: bool,
+        cwd: str,
+    ):
         if create or writeable:
             raise NotWriteable("XAR supports only reading")
         return XARFS(parse_result.resource)

@@ -78,4 +78,4 @@ string HexKey(chunklist_pubkey_key &key) {
     return s;
 }
 
-chunklist_file chunklist; 
+chunklist_file chunklist;
