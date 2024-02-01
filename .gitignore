@@ -14,6 +14,8 @@ pytestdebug.log
 *.gz
 *.zlib
 *.dmg
+*.pkg
+*.ipsw
 
 # VS Code
 **/.vscode
