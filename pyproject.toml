@@ -1,32 +1,49 @@
 [build-system]
 build-backend = "setuptools.build_meta"
-requires = ["setuptools>=69.0.3", "setuptools-scm>=8.0.4"]
+requires = [
+  "setuptools>=69.0.3",
+  "setuptools-scm>=8.0.4"
+]
 
 [project]
 authors = [
   {name = "Jevin Sweval", email = "jevinsweval@gmail.com"}
 ]
 classifiers = [
-  "Programming Language :: Python :: 3"
+  "Programming Language :: Python :: 3 :: Only",
+  "Programming Language :: Python :: 3.9"
 ]
 dependencies = [
-  "anytree>=2.8.0",
-  "attrs>=21.4.0",
+  "anytree>=2.8",
+  "attrs>=21.4",
   "construct>=2.10.67",
   "fs>=2.4.15",
   "fusefs>=0.0.2",
   "packaging>=23.2",
-  "path>=16.9.0",
+  "path>=16.9",
   "pretty-errors>=1.2.25",
   "requests>=2.27.1",
-  "rich>=11.2.0",
-  "typing-extensions>=4.1.0",
+  "rich>=11.2",
+  "typing-extensions>=4.1",
   "untangle>=1.1.1",
   "wrapt>=1.13.3"
 ]
 description = "FruitSU - Tools for Apple Software Updates"
-dynamic = ["version"]
-keywords = ["ipsw", "xar", "dmg", "hfs", "hfs+", "hfsplus", "apfs", "apple", "ios", "macos"]
+dynamic = [
+  "version"
+]
+keywords = [
+  "apfs",
+  "apple",
+  "dmg",
+  "hfs",
+  "hfs+",
+  "hfsplus",
+  "ios",
+  "ipsw",
+  "macos",
+  "xar"
+]
 license = {text = "BSD-2-Clause"}
 name = "fruitsu"
 readme = {file = 'README.md', content-type = 'text/markdown'}
@@ -39,25 +56,25 @@ xar = "fruitsu.xar:XARFSOpener"
 dev = [
   "deal>=4.19.1",
   "hypothesis>=6.36.1",
+  "icontract>=2.6",
   "icontract-hypothesis>=1.1.7",
-  "icontract>=2.6.0",
   "ipython>=8.0.1",
   "mypy>=0.931",
   "poethepoet>=0.12.3",
-  "pytest-clarity>=1.0.1",
-  "pytest-cov>=3.0.0",
-  "pytest-pycharm>=0.7.0",
-  "pytest-randomly>=3.11.0",
   "pytest>=7.0.1",
-  "six>=1.16.0",
+  "pytest-clarity>=1.0.1",
+  "pytest-cov>=3",
+  "pytest-pycharm>=0.7",
+  "pytest-randomly>=3.11",
+  "six>=1.16",
   "tox>=4.12.1"
 ]
 
 [project.scripts]
-fruitsu-dmg-mod = 'fruitsu.dmg:main'
-fruitsu-hfs = 'fruitsu.tools.hfs:main'
-fruitsu-hfs-mod = 'fruitsu.hfs:main'
-fruitsu-xar-mod = 'fruitsu.xar:main'
+fruitsu-dmg-mod = "fruitsu.dmg:main"
+fruitsu-hfs = "fruitsu.tools.hfs:main"
+fruitsu-hfs-mod = "fruitsu.hfs:main"
+fruitsu-xar-mod = "fruitsu.xar:main"
 
 [project.urls]
 repository = "https://github.com/jevinskie/FruitSU"
