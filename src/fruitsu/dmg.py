@@ -1,14 +1,34 @@
 #!/usr/bin/env python3
 
+import argparse
 import io
+import logging
 import mmap
 import plistlib
+import sys
 import zlib
 from ctypes import c_uint8, memset
 from typing import IO, Final
 
 import attr
 from construct import Bytes, Const, Enum, Int32ub, Int64ub, Struct, this
+from packaging.version import Version
+from rich.console import Console
+from rich.logging import RichHandler
+
+from . import _version
+
+LOG_FORMAT = "%(message)s"
+logging.basicConfig(
+    level=logging.WARNING,
+    format=LOG_FORMAT,
+    datefmt="[%X]",
+    handlers=[RichHandler(console=Console(stderr=True), rich_tracebacks=True)],
+)
+
+program_name = "fruitsu-dmg-mod"
+
+log = logging.getLogger(program_name)
 
 SECTOR_SIZE: Final[int] = 512
 
@@ -173,3 +193,37 @@ class DMG:
             with open("dump-whole.img", "wb") as dumpf:
                 # dumpf.write(dmg_wbuf)
                 dumpf.write(b"im just a dummy\n")
+
+
+def get_arg_parser() -> argparse.ArgumentParser:
+    parser = argparse.ArgumentParser(description=program_name)
+    parser.add_argument("-v", "--verbose", action="store_true", help="be verbose")
+    parser.add_argument(
+        "--version",
+        action="version",
+        version=f"%(prog)s version: {Version(_version.version)}",
+    )
+    return parser
+
+
+def real_main(args: argparse.Namespace) -> int:
+    verbose: Final[bool] = args.verbose
+    if verbose:
+        log.setLevel(logging.INFO)
+        log.info(f"{program_name}: verbose mode enabled")
+    return 0
+
+
+def main() -> int:
+    try:
+        args = get_arg_parser().parse_args()
+        return real_main(args)
+    except Exception:
+        log.exception(f"Received an unexpected exception when running {program_name}")
+        return 1
+    except KeyboardInterrupt:
+        return 0
+
+
+if __name__ == "__main__":
+    sys.exit(main())

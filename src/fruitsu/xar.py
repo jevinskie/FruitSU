@@ -1,5 +1,8 @@
+import argparse
 import enum
 import io
+import logging
+import sys
 import zlib
 from typing import BinaryIO, Collection, Final, Mapping, Optional
 
@@ -14,9 +17,26 @@ from fs.opener.errors import NotWriteable
 from fs.opener.parse import ParseResult
 from fs.permissions import Permissions
 from fs.subfs import SubFS
+from packaging.version import Version
+from rich.console import Console
+from rich.logging import RichHandler
 
+from . import _version
 from .fs import DirEntType, INode
 from .io import FancyRawIOBase, OffsetRawIOBase
+
+LOG_FORMAT = "%(message)s"
+logging.basicConfig(
+    level=logging.WARNING,
+    format=LOG_FORMAT,
+    datefmt="[%X]",
+    handlers=[RichHandler(console=Console(stderr=True), rich_tracebacks=True)],
+)
+
+program_name = "fruitsu-xar-mod"
+
+log = logging.getLogger(program_name)
+
 
 __all__ = [
     "ChecksumAlgorithmEnum",
@@ -179,3 +199,37 @@ class XARFSOpener(fs.opener.Opener):
         if create or writeable:
             raise NotWriteable("XAR supports only reading")
         return XARFS(parse_result.resource)
+
+
+def get_arg_parser() -> argparse.ArgumentParser:
+    parser = argparse.ArgumentParser(description=program_name)
+    parser.add_argument("-v", "--verbose", action="store_true", help="be verbose")
+    parser.add_argument(
+        "--version",
+        action="version",
+        version=f"%(prog)s version: {Version(_version.version)}",
+    )
+    return parser
+
+
+def real_main(args: argparse.Namespace) -> int:
+    verbose: Final[bool] = args.verbose
+    if verbose:
+        log.setLevel(logging.INFO)
+        log.info(f"{program_name}: verbose mode enabled")
+    return 0
+
+
+def main() -> int:
+    try:
+        args = get_arg_parser().parse_args()
+        return real_main(args)
+    except Exception:
+        log.exception(f"Received an unexpected exception when running {program_name}")
+        return 1
+    except KeyboardInterrupt:
+        return 0
+
+
+if __name__ == "__main__":
+    sys.exit(main())

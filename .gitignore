@@ -1,9 +1,9 @@
 # Python
 **/__pycache__/
-/fruitsu.egg-info/
-/fruitsu/_version.py
+/build/
+/src/fruitsu.egg-info/
+/src/fruitsu/_version.py
 *.pyc
-poetry.lock
 
 # Testing
 /.tox/
