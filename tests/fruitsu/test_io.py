@@ -1,4 +1,9 @@
-from fruitsu.io import HTTPFile
+#!/usr/bin/env python3
+
+import sys
+
+import pytest
+from fruitsu.io_ext import HTTPFile
 from rich import print
 
 
@@ -9,3 +14,9 @@ def test_https():
     print(fh)
     hdr = fh.read(16)
     print(f"hdr: {hdr.hex()}")
+
+
+if __name__ == "__main__":
+    args = sys.argv
+    print(f"pytest.main args: {args}")
+    sys.exit(pytest.main(args))

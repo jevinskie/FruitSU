@@ -1,5 +1,9 @@
-import importlib.resources
+#!/usr/bin/env python3
 
+import importlib.resources
+import sys
+
+import pytest
 from fruitsu.xar import XARFile
 from rich import print
 
@@ -12,3 +16,9 @@ def test_xar_etc():
         print(f"xar: {xar}")
         # xar.dump()
         xar.toc.rootfs.dump()
+
+
+if __name__ == "__main__":
+    args = sys.argv
+    print(f"pytest.main args: {args}")
+    sys.exit(pytest.main(args))

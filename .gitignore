@@ -7,7 +7,9 @@
 
 # Testing
 /.tox/
+
 pytestdebug.log
+/toc.xml
 
 *.img
 *.bin

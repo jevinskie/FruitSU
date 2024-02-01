@@ -23,7 +23,7 @@ from rich.logging import RichHandler
 
 from . import _version
 from .fs import DirEntType, INode
-from .io import FancyRawIOBase, OffsetRawIOBase
+from .io_ext import FancyRawIOBase, OffsetRawIOBase
 
 LOG_FORMAT = "%(message)s"
 logging.basicConfig(

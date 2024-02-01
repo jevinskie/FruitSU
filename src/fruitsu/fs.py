@@ -30,7 +30,7 @@ class DirEntType(enum.Enum):
 class INode(NodeMixin):
     name: str
     type: Final[DirEntType]
-    size: int
+    _size: int
     size_comp: Optional[int]
     _ino: Final[int]
 
@@ -46,12 +46,20 @@ class INode(NodeMixin):
         super().__init__()
         self.name = name
         self.type = type
-        self.size = size
+        self._size = size
         self.size_comp = size_comp
         self.parent = parent
         if type == DirEntType.DIR:
             self.children = children if children else []
         self._ino = InoVendor.next()
+
+    @property
+    def size(self):
+        return self._size
+
+    @size.setter
+    def size(self, value):
+        self._size = value
 
     @property
     def is_dir(self) -> bool:

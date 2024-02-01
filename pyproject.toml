@@ -62,6 +62,7 @@ dev = [
   "mypy>=0.931",
   "poethepoet>=0.12.3",
   "pytest>=7.0.1",
+  "pytest-sugar>=0.9.7",
   "pytest-clarity>=1.0.1",
   "pytest-cov>=3",
   "pytest-pycharm>=0.7",
@@ -86,7 +87,7 @@ test-v = "pytest -vvvv"
 test-vv = "pytest -vvvv --capture=tee-sys"
 
 [tool.pytest.ini_options]
-addopts = "--import-mode=append"
+addopts = "--import-mode=importlib"
 testpaths = [
   "tests"
 ]

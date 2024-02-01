@@ -10,7 +10,7 @@ from rich.console import Console
 from rich.logging import RichHandler
 
 from .. import _version, hfs
-from ..io import OffsetRawIOBase
+from ..io_ext import OffsetRawIOBase
 
 LOG_FORMAT = "%(message)s"
 logging.basicConfig(
