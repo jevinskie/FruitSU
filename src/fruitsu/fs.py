@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import enum
-from typing import Final, List, Optional
+from typing import Final, List, Optional, Self
 
 from anytree import NodeMixin, RenderTree
 from anytree.resolver import ChildResolverError, Resolver, ResolverError
@@ -9,7 +9,6 @@ from fs.enums import ResourceType
 from rich import (
     print as rprint,
 )
-from typing_extensions import Self
 
 
 class InoVendor:
@@ -37,10 +36,10 @@ class INode(NodeMixin):
     def __init__(
         self,
         name: str,
-        type: Final[DirEntType],
+        type: DirEntType,
         size: int = 0,
         size_comp: Optional[int] = None,
-        parent: Self = None,
+        parent: Optional[Self] = None,
         children: Optional[List[Self]] = None,
     ):
         super().__init__()

@@ -4,7 +4,7 @@ import io
 import logging
 import sys
 import zlib
-from typing import BinaryIO, Collection, Final, Mapping, Optional
+from typing import Any, BinaryIO, Collection, Container, Final, Mapping, Optional
 
 import fs.opener.registry
 import untangle
@@ -113,7 +113,7 @@ class XARTOC:
 @define
 class XARFile:
     fh: Final[FancyRawIOBase] = field(converter=FancyRawIOBase)
-    hdr: XARHeader = field(init=False)
+    hdr: Container[Any] = field(init=False)
     toc: Final[XARTOC] = field(init=False)
 
     def __attrs_post_init__(self):
@@ -155,7 +155,7 @@ class XARFS(fs.base.FS):
             }
         )
 
-    def listdir(self, path: str) -> [str]:
+    def listdir(self, path: str) -> list[str]:
         ino = self.xar.toc.rootfs.lookup(path)
         if ino is None:
             raise ResourceNotFound(path)

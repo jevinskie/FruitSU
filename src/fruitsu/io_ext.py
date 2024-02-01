@@ -1,10 +1,9 @@
 import io
 from contextlib import contextmanager
-from typing import Final, Optional
+from typing import Final, Generator, Optional, Self
 
 import requests
 from attrs import define, field
-from typing_extensions import Self
 from wrapt import ObjectProxy
 
 
@@ -29,7 +28,9 @@ class SubscriptedIOBaseMixin:
 
 class SeekContextIOBaseMixin:
     @contextmanager
-    def seek_ctx(self, offset: int, whence: int = io.SEEK_SET) -> int:
+    def seek_ctx(
+        self, offset: int, whence: int = io.SEEK_SET
+    ) -> Generator[int, None, None]:
         old_tell = self.tell()
         try:
             yield self.seek(offset, whence)

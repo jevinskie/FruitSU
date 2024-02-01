@@ -6,7 +6,7 @@ import io
 import logging
 import math
 import sys
-from typing import Final
+from typing import Any, Container, Final
 
 import attr
 from attrs import define
@@ -250,7 +250,7 @@ BTreeKey = Union(
 @attr.s
 class HFS:
     fh: OffsetRawIOBase = attr.ib()
-    hdr: HFSPlusVolumeHeader = attr.ib(init=False, repr=False)
+    hdr: Container[Any] = attr.ib(init=False, repr=False)
     cat_file: Final[OffsetRawIOBase] = attr.ib(init=False)
 
     def __attrs_post_init__(self):

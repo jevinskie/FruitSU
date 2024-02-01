@@ -68,7 +68,8 @@ dev = [
   "pytest-pycharm>=0.7",
   "pytest-randomly>=3.11",
   "six>=1.16",
-  "tox>=4.12.1"
+  "tox>=4.12.1",
+  "types-request>=2.31.0.20240125"
 ]
 
 [project.scripts]
